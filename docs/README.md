@@ -7,16 +7,12 @@ Aquí van los dos informes que pide el enunciado, en Markdown:
 - `correccion.md` — el informe de corrección: la argumentación de que cada
   función hace lo que el enunciado pide.
 
+Los dos archivos ya existen y traen un ejemplo de lo que se espera:
+`proceso.md` sigue la traza de `factorial(5)` con recursión de cola y dibuja la
+pila con `mermaid`; `correccion.md` argumenta por inducción estructural la
+corrección del factorial y del máximo de una lista, y con estado, invariante y
+transformación la de sus versiones iterativas. El informe del taller reemplaza
+ese contenido y sigue la misma forma sobre las funciones del enunciado.
+
 La notación matemática se escribe en LaTeX dentro del Markdown y los
 diagramas se generan con `mermaid`. No se aceptan imágenes insertadas.
-
-En `ejemplos/` hay uno de cada, sobre el factorial y el máximo de una lista:
-
-- [`ejemplos/proceso.md`](ejemplos/proceso.md): la traza de `factorial(5)`
-  con recursión de cola, paso a paso y con el diagrama de la pila en `mermaid`.
-- [`ejemplos/correccion.md`](ejemplos/correccion.md): cómo se argumenta la
-  corrección de un programa recursivo por inducción estructural y la de uno
-  iterativo con estado, invariante y transformación.
-
-Los informes del taller siguen esa misma forma sobre las funciones del
-enunciado.
