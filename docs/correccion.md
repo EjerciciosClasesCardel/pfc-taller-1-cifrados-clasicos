@@ -170,7 +170,7 @@ Demostración de corrección:
   $\text{Inv}(s_f) \rightarrow \text{respuesta}(s_f) == f(a)$.
 - Finalmente, demostrar que siempre se llega al estado final $s_f$. Esto
   implica que
-  $P_f(a) == P_f\text{\_iter}(s_0) == \text{respuesta}(s_f) == f(a)$.
+  $P_f(a) == \text{iter}(s_0) == \text{respuesta}(s_f) == f(a)$.
 
 ### Ejemplo: factorial iterativo
 
@@ -220,7 +220,7 @@ $(s_i \neq s_f \land \text{Inv}(s_i)) \rightarrow \text{Inv}(\text{transformar}(
 **4.** En cada paso, la componente $i$ del estado incrementa, acercándose a $n+1$.
 Después de $n$ iteraciones, se alcanza $n+1$.
 
-Esto implica que $P_f(n) == P_f\text{\_iter}(1, n, 1) == n!$
+Esto implica que $P_f(n) == \text{iter}(1, n, 1) == n!$
 
 ### Ejemplo: el máximo de una lista
 
