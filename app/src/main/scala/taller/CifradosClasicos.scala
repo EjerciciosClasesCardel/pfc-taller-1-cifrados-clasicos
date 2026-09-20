@@ -65,5 +65,5 @@ class CifradosClasicos {
    * Vigenère: cada letra se corre según la letra de la clave que le toca. Lo
    * que no es letra minúscula se copia y no consume clave.
    */
-  def vigenere(m: Mensaje, clave: Clave): Mensaje = ??
+  def vigenere(m: Mensaje, clave: Clave): Mensaje = ???
 }
