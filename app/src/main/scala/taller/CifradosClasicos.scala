@@ -43,6 +43,7 @@ class CifradosClasicos {
    * Cuando la función esté escrita, anótela con @tailrec: el compilador
    * comprueba que la llamada recursiva sea lo último que hace.
    */
+    @tailrec
   final def cesarCola(m: Mensaje, k: Int, acc: Mensaje = ""): Mensaje = {
     if (m.isEmpty) acc
     else {
@@ -61,7 +62,22 @@ class CifradosClasicos {
    * Cuenta las letras minúsculas del mensaje, de mayor a menor frecuencia y,
    * en empate, en orden alfabético. El recorrido es recursivo de cola.
    */
-  def frecuencias(m: Mensaje): Frecuencias = ???
+  def frecuencias(m: Mensaje): Frecuencias = {
+    @tailrec
+    def contar(m: Mensaje, acc: Map[Char, Int]): Map[Char, Int] = {
+      if (m.isEmpty) acc
+      else {
+        val c = m.head
+        val nuevaAcc = if (esMinuscula(c)) {
+          acc + (c -> (acc.getOrElse(c, 0) + 1))
+        } else acc
+        contar(m.tail, nuevaAcc)
+      }
+    }
+
+    val freqMap = contar(m, Map.empty)
+    freqMap.toList.sortBy { case (c, count) => (-count, c) }
+  }
 
   // Punto 4 -------------------------------------------------------------------
 
@@ -69,9 +85,23 @@ class CifradosClasicos {
    * Supone que la letra más frecuente del mensaje cifrado es la 'e' del
    * original y devuelve la distancia entre las dos. Sin letras, cero.
    */
-  def desplazamientoProbable(m: Mensaje): Int = ???
+  def desplazamientoProbable(m: Mensaje): Int = {
+    val freq = frecuencias(m)
+    if (freq.isEmpty) 0
+    else {
+      // Ordena: primero por frecuencia descendente (-frecuencia), luego por letra ascendente
+      val ordenada = freq.sortBy { case (letra, cuenta) => (-cuenta, letra) }
+      val letraMasFrecuente = ordenada.head._1
 
-  def romperCesar(m: Mensaje): Mensaje = ???
+      val desplazamiento = letraMasFrecuente - 'e'
+      if (desplazamiento < 0) desplazamiento + letras else desplazamiento
+    }
+  }
+
+  def romperCesar(m: Mensaje): Mensaje = {
+    val k = desplazamientoProbable(m)
+    cesarCola(m, -k)
+  }
 
   // Punto 5 -------------------------------------------------------------------
 
@@ -79,7 +109,9 @@ class CifradosClasicos {
    * Cuántos mensajes de longitud n se forman con a letras sin dos iguales
    * seguidas.
    */
-  def combinaciones(n: Int, a: Int): BigInt = ???
+  def combinaciones(n: Int, a: Int): BigInt = {
+    0
+  }
 
   /**
    * Vigenère: cada letra se corre según la letra de la clave que le toca. Lo
