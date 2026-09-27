@@ -15,11 +15,11 @@ parte de la entrega: si falta alguno, la entrega se sanciona con el 20 % de
 la nota.
 
 | Nombre completo | Código |
-|---|---|
-| | |
-| | |
-| | |
-| | |
+| --------------- | ------ |
+|                 |        |
+|                 |        |
+|                 |        |
+|                 |        |
 
 ## Cómo está organizado el proyecto
 
@@ -64,13 +64,13 @@ escribe usted, dentro de `CifradosClasicos.scala`.
 
 ## Los cinco puntos
 
-| Punto | Función | Recursión |
-|---|---|---|
-| 1 | `cesar(m: Mensaje, k: Int): Mensaje` | lineal |
-| 2 | `cesarCola(m: Mensaje, k: Int, acc: Mensaje = ""): Mensaje` | de cola, con `@tailrec` |
-| 3 | `frecuencias(m: Mensaje): Frecuencias` | de cola |
-| 4 | `desplazamientoProbable(m: Mensaje): Int` y `romperCesar(m: Mensaje): Mensaje` | |
-| 5 | `combinaciones(n: Int, a: Int): BigInt` y `vigenere(m: Mensaje, clave: Clave): Mensaje` | |
+| Punto | Función                                                                                 | Recursión               |
+| ----- | --------------------------------------------------------------------------------------- | ----------------------- |
+| 1     | `cesar(m: Mensaje, k: Int): Mensaje`                                                    | lineal                  |
+| 2     | `cesarCola(m: Mensaje, k: Int, acc: Mensaje = ""): Mensaje`                             | de cola, con `@tailrec` |
+| 3     | `frecuencias(m: Mensaje): Frecuencias`                                                  | de cola                 |
+| 4     | `desplazamientoProbable(m: Mensaje): Int` y `romperCesar(m: Mensaje): Mensaje`          |                         |
+| 5     | `combinaciones(n: Int, a: Int): BigInt` y `vigenere(m: Mensaje, clave: Clave): Mensaje` |                         |
 
 En el punto 2, agregue la anotación `@tailrec` cuando la función esté
 escrita: el compilador comprueba que la llamada recursiva sea lo último que
