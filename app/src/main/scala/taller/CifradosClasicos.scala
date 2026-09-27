@@ -33,7 +33,15 @@ class CifradosClasicos {
    * Cuando la función esté escrita, anótela con @tailrec: el compilador
    * comprueba que la llamada recursiva sea lo último que hace.
    */
-  final def cesarCola(m: Mensaje, k: Int, acc: Mensaje = ""): Mensaje = ???
+  @tailrec
+  final def cesarCola(m: Mensaje, k: Int, acc: Mensaje = ""): Mensaje =
+      if (m.isEmpty) acc
+      else {
+        val primero = m.head
+        val caracterCesar = (primero.toInt + k).toChar
+        cesarCola(m.tail, k, acc + caracterCesar)
+      }
+    }
 
   // Punto 3 -------------------------------------------------------------------
 
