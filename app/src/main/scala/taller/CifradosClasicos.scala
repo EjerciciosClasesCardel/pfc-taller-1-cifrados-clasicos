@@ -16,8 +16,8 @@ class CifradosClasicos {
   // Una frecuencia asocia cada letra con las veces que aparece.
   type Frecuencias = List[(Char, Int)]
 
-  val letras = 26
-  val primera = 'a'.toInt
+  val letras = 26 //abecedario
+  val primera = 'a'.toInt //valor ASCII de 'a'
 
   def esMinuscula(c: Char): Boolean = c >= 'a' && c <= 'z'
 
@@ -27,12 +27,18 @@ class CifradosClasicos {
   def cesar(m: Mensaje, k: Int): Mensaje = {
     if (m.isEmpty) ""
     else {
-      val c = m.head
-      val nuevaLetra = if (esMinuscula(c)) {
+      val c = m.head //toma la primera letra de la frase
+      val nuevaLetra = if (esMinuscula(c)) {  //c es minuscula?
         val desplazado = ((c.toInt - primera + k) % letras + letras) % letras + primera
-        desplazado.toChar
-      } else c
-      nuevaLetra + cesar(m.tail, k)
+        //c.toInt hace el desplazamiento - primera es el valor ASCII de 'a'
+        //c=99 a=97 99-97=2 -> a=0, b=1, c=2... z=25
+        //+k desplazamiento
+        //%letras para que se repita al llegar a 25  26%26=0 0=a
+        //+letras para que no sea negativo
+        //+primera para que sea el valor ASCII de la letra
+        desplazado.toChar //pasa el valor ASCII a un char
+      } else c //si no es minuscula, no se desplaza, se deja igual
+      nuevaLetra + cesar(m.tail, k) //"borra" la letra de la frase y vuelve a iniciar
     }
   }
 
@@ -43,16 +49,20 @@ class CifradosClasicos {
    * Cuando la función esté escrita, anótela con @tailrec: el compilador
    * comprueba que la llamada recursiva sea lo último que hace.
    */
-    @tailrec
+    @tailrec // recursion de cola
   final def cesarCola(m: Mensaje, k: Int, acc: Mensaje = ""): Mensaje = {
-    if (m.isEmpty) acc
+      //final def no puede sobreescribirse
+    if (m.isEmpty) acc //si ya no hay letras, devuelve el acumulador (frase desplazada)
     else {
-      val c = m.head
-      val nuevaLetra = if (esMinuscula(c)) {
+      val c = m.head //primera letra
+      val nuevaLetra = if (esMinuscula(c)) { //si c es minuscula
         val desplazado = ((c.toInt - primera + k) % letras + letras) % letras + primera
-        desplazado.toChar
-      } else c
+        // mismo proceso que cesar
+        desplazado.toChar //vuelve el valor ascii a char
+      } else c //si no es minuscula, no se desplaza
       cesarCola(m.tail, k, acc + nuevaLetra)
+      //m.tail borra la letra y vuelve a iniciar, k no se modifica,
+      //acc es lo que llevamos, nuevaLetra es la letra desplazada
     }
   }
 
@@ -89,9 +99,7 @@ class CifradosClasicos {
     val freq = frecuencias(m)
     if (freq.isEmpty) 0
     else {
-      // Ordena: primero por frecuencia descendente (-frecuencia), luego por letra ascendente
-      val ordenada = freq.sortBy { case (letra, cuenta) => (-cuenta, letra) }
-      val letraMasFrecuente = ordenada.head._1
+      val letraMasFrecuente = freq.head._1
 
       val desplazamiento = letraMasFrecuente - 'e'
       if (desplazamiento < 0) desplazamiento + letras else desplazamiento
@@ -110,7 +118,11 @@ class CifradosClasicos {
    * seguidas.
    */
   def combinaciones(n: Int, a: Int): BigInt = {
-    0
+    if (n == 0) BigInt(1)
+    else if (n == 1) BigInt(a)
+    else {
+      BigInt(a - 1) * combinaciones(n - 1, a)
+    }
   }
 
   /**
