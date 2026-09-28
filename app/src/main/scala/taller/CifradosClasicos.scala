@@ -34,14 +34,21 @@ class CifradosClasicos {
    * comprueba que la llamada recursiva sea lo último que hace.
    */
   @tailrec
-  final def cesarCola(m: Mensaje, k: Int, acc: Mensaje = ""): Mensaje =
+  final def cesarCola(m: Mensaje, k: Int, acc: Mensaje = ""): Mensaje = {
       if (m.isEmpty) acc
       else {
         val primero = m.head
-        val caracterCesar = (primero.toInt + k).toChar
+        val caracterCesar = {
+          if (esMinuscula(primero)) {
+            ((primero.toInt - primera + k) % letras + letras) % letras + primera
+          }
+          else {
+            primero.toInt
+          }
+        }.toChar
         cesarCola(m.tail, k, acc + caracterCesar)
       }
-    }
+  }
 
   // Punto 3 -------------------------------------------------------------------
 
