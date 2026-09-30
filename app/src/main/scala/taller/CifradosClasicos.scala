@@ -24,16 +24,37 @@ class CifradosClasicos {
   // Punto 1 -------------------------------------------------------------------
 
   /** César con recursión lineal: una operación pendiente por letra. */
-  def cesar(m: Mensaje, k: Int): Mensaje = ???
+  def cesar(m: Mensaje, k: Int): Mensaje =
+    if(m.isEmpty()) ""
+    else{
+      val letra = m(0) // val letra = m.tail
+      val posicion = letra.toInt - primera
+      val nuevaPosicion = (posicion + k) % letras
+      val letraCifrada = (nuevaPosicion + primera).toChar
+
+      letraCifrada + cesar(m.substring(1), k) // letraCifrada + cesar(m.tail, k)
+    }
+
 
   // Punto 2 -------------------------------------------------------------------
 
   /**
    * El mismo César como proceso iterativo: espacio constante.
-   * Cuando la función esté escrita, anótela con @tailrec: el compilador
+   * Cuando la función esté escrita, anótela con
+   * @tailrec: el compilador
    * comprueba que la llamada recursiva sea lo último que hace.
    */
-  final def cesarCola(m: Mensaje, k: Int, acc: Mensaje = ""): Mensaje = ???
+    @tailrec
+  final def cesarCola(m: Mensaje, k: Int, acc: Mensaje = ""): Mensaje =
+    if(m.isEmpty) acc
+    else{
+      val letra = m(0) // val letra = m.head
+      val posicion = letra.toInt - primera
+      val nuevaPosicion = (posicion + k) % letras
+      val letraCifrada = (nuevaPosicion + primera).toChar
+
+      cesarCola(m.substring(1),k,acc + letraCifrada) // cesarCola(m.tail,k,acc + letraCifrada)
+    }
 
   // Punto 3 -------------------------------------------------------------------
 
@@ -41,7 +62,8 @@ class CifradosClasicos {
    * Cuenta las letras minúsculas del mensaje, de mayor a menor frecuencia y,
    * en empate, en orden alfabético. El recorrido es recursivo de cola.
    */
-  def frecuencias(m: Mensaje): Frecuencias = ???
+  def frecuencias(m: Mensaje,acc: Int): Frecuencias = ???
+
 
   // Punto 4 -------------------------------------------------------------------
 
