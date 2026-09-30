@@ -22,9 +22,22 @@ class CifradosClasicos {
   def esMinuscula(c: Char): Boolean = c >= 'a' && c <= 'z'
 
   // Punto 1 -------------------------------------------------------------------
-
+  def cifrarChar(c: Char, k: Int): Char = {
+    if (esMinuscula(c)) {
+      val nuevaPosicion = Math.floorMod(c - 'a' + k, 26)
+      ('a' + nuevaPosicion).toChar
+    } else {
+      c
+    }
+  }
   /** César con recursión lineal: una operación pendiente por letra. */
-  def cesar(m: Mensaje, k: Int): Mensaje = ???
+  def cesar(m: Mensaje, k: Int): Mensaje = {
+    if (m.isEmpty) {
+      ""
+    } else {
+      cifrarChar(m.head, k).toString + cesar(m.tail, k)
+    }
+  }
 
   // Punto 2 -------------------------------------------------------------------
 
