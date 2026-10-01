@@ -20,20 +20,35 @@ class CifradosClasicos {
   val primera = 'a'.toInt
 
   def esMinuscula(c: Char): Boolean = c >= 'a' && c <= 'z'
+  def desplazar(letra: Char, k: Int): Char =
+    if(esMinuscula(letra))
+      (primera + Math.floorMod(letra - primera + k, letras)).toChar
+    else letra
+
 
   // Punto 1 -------------------------------------------------------------------
 
   /** César con recursión lineal: una operación pendiente por letra. */
-  def cesar(m: Mensaje, k: Int): Mensaje = ???
+
+  def cesar(m: Mensaje, k: Int): Mensaje =
+    if(m.isEmpty()) ""
+    else desplazar(m(0),k) + cesar(m.substring(1),k)
+
+
+
 
   // Punto 2 -------------------------------------------------------------------
 
   /**
    * El mismo César como proceso iterativo: espacio constante.
-   * Cuando la función esté escrita, anótela con @tailrec: el compilador
+   * Cuando la función esté escrita, anótela con
+   * @tailrec: el compilador
    * comprueba que la llamada recursiva sea lo último que hace.
    */
-  final def cesarCola(m: Mensaje, k: Int, acc: Mensaje = ""): Mensaje = ???
+    @tailrec
+  final def cesarCola(m: Mensaje, k: Int, acc: Mensaje = ""): Mensaje =
+    if(m.isEmpty) acc
+    else cesarCola(m.substring(1),k, acc + desplazar(m(0),k))
 
   // Punto 3 -------------------------------------------------------------------
 
@@ -42,7 +57,6 @@ class CifradosClasicos {
    * en empate, en orden alfabético. El recorrido es recursivo de cola.
    */
   def frecuencias(m: Mensaje): Frecuencias = ???
-
   // Punto 4 -------------------------------------------------------------------
 
   /**
