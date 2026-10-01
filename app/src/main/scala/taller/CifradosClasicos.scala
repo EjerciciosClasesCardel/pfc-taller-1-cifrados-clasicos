@@ -20,20 +20,21 @@ class CifradosClasicos {
   val primera = 'a'.toInt
 
   def esMinuscula(c: Char): Boolean = c >= 'a' && c <= 'z'
+  def desplazar(letra: Char, k: Int): Char =
+    if(esMinuscula(letra))
+      (primera + Math.floorMod(letra - primera + k, letras)).toChar
+    else letra
+
 
   // Punto 1 -------------------------------------------------------------------
 
   /** César con recursión lineal: una operación pendiente por letra. */
+
   def cesar(m: Mensaje, k: Int): Mensaje =
     if(m.isEmpty()) ""
-    else{
-      val letra = m(0) // val letra = m.tail
-      val posicion = letra.toInt - primera
-      val nuevaPosicion = (posicion + k) % letras
-      val letraCifrada = (nuevaPosicion + primera).toChar
+    else desplazar(m(0),k) + cesar(m.substring(1),k)
 
-      letraCifrada + cesar(m.substring(1), k) // letraCifrada + cesar(m.tail, k)
-    }
+
 
 
   // Punto 2 -------------------------------------------------------------------
@@ -47,14 +48,7 @@ class CifradosClasicos {
     @tailrec
   final def cesarCola(m: Mensaje, k: Int, acc: Mensaje = ""): Mensaje =
     if(m.isEmpty) acc
-    else{
-      val letra = m(0) // val letra = m.head
-      val posicion = letra.toInt - primera
-      val nuevaPosicion = (posicion + k) % letras
-      val letraCifrada = (nuevaPosicion + primera).toChar
-
-      cesarCola(m.substring(1),k,acc + letraCifrada) // cesarCola(m.tail,k,acc + letraCifrada)
-    }
+    else cesarCola(m.substring(1),k, acc + desplazar(m(0),k))
 
   // Punto 3 -------------------------------------------------------------------
 
@@ -62,9 +56,7 @@ class CifradosClasicos {
    * Cuenta las letras minúsculas del mensaje, de mayor a menor frecuencia y,
    * en empate, en orden alfabético. El recorrido es recursivo de cola.
    */
-  def frecuencias(m: Mensaje,acc: Int): Frecuencias = ???
-
-
+  def frecuencias(m: Mensaje): Frecuencias = ???
   // Punto 4 -------------------------------------------------------------------
 
   /**
