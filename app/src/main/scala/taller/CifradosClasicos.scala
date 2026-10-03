@@ -53,7 +53,23 @@ class CifradosClasicos {
    * Cuando la función esté escrita, anótela con @tailrec: el compilador
    * comprueba que la llamada recursiva sea lo último que hace.
    */
-  final def cesarCola(m: Mensaje, k: Int, acc: Mensaje = ""): Mensaje = ???
+
+  //@tailrec le pide al compilador la verificacion de la llamada recursiva
+  // sea lo **ultimo** que hace la función, si no lo es, enviara un error al momento de compilar
+  @tailrec
+  final def cesarCola(m: Mensaje, k: Int, acc: Mensaje = ""): Mensaje = {
+    //la explicacion de esta funcion ya se encuentra explicada en el punto 1, asi que sobre escribirlo denuevo
+    def desplazar (c: Char): Char =
+      if (esMinuscula(c)) (primera + ((c - primera + k) % letras + letras) % letras).toChar
+      else c
+
+    // Caso base: si ya no quedan letras por cifras, entonces devuelve lo acumulado en acc
+    if (m.isEmpty) acc
+    // Caso recursivo: se cifra la primera letra y se agrega al acumulador, el cual es el acc
+    else cesarCola(m.tail, k, acc + desplazar(m.head))
+  }
+
+
 
   // Punto 3 -------------------------------------------------------------------
 
