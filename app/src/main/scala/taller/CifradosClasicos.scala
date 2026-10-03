@@ -27,7 +27,7 @@ class CifradosClasicos {
   def cesar(m: Mensaje, k: Int): Mensaje = {
     // Función auxiliar para cifrar una sola letra
       def desplazar (c: Char): Char = {
-        /*
+        /**
         Para cifrar unicamente las minúsculas (desde la a hasta la z (abecedario inglés))
         (c - primera) es para la posicion de la letra (a=0 --- z= 25)
         +k define cuantas posiciones moveremos la letra
