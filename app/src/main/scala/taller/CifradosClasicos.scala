@@ -24,7 +24,27 @@ class CifradosClasicos {
   // Punto 1 -------------------------------------------------------------------
 
   /** César con recursión lineal: una operación pendiente por letra. */
-  def cesar(m: Mensaje, k: Int): Mensaje = ???
+  def cesar(m: Mensaje, k: Int): Mensaje = {
+    // Función auxiliar para cifrar una sola letra
+      def desplazar (c: Char): Char = {
+        /*
+        Para cifrar unicamente las minúsculas (desde la a hasta la z (abecedario inglés))
+        (c - primera) es para la posicion de la letra (a=0 --- z= 25)
+        +k define cuantas posiciones moveremos la letra
+        % letras + letras) % letras): esta para evitar que el que el modulo nunca de negativo (sirve para k negativo y k > 26)
+        y ya con primera + .... volvemos a letras
+        */
+        if (esMinuscula(c)) (primera + ((c - primera + k ) % letras + letras) % letras).toChar
+        // espacios, digitos, mayusculas y signos pasan como si nada
+        else c
+      }
+
+    // Caso por defecto, dara resultado vacio
+    if (m.isEmpty) ""
+    // recursion: se cifra la primera letra y se continua con la siguiente, la concatenación
+    // queda pendiente: por ello crece la pila
+    else desplazar(m.head).toString + cesar(m.tail, k)
+  }
 
   // Punto 2 -------------------------------------------------------------------
 
