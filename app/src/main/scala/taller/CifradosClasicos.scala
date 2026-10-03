@@ -28,15 +28,15 @@ class CifradosClasicos {
     if (mensaje.isEmpty) ""
     else {
       val caracter = mensaje.head
-      val desplazamiento = Math.floorMod(desplazamiento, letras)
+      val desplazamientoReducido = Math.floorMod(desplazamiento, letras)
       val caracterCifrado =
         if (esMinuscula(caracter)) {
           val posicionOriginal = caracter.toInt - primera
-          val posicionCifrada = (posicionOriginal + desplazamiento) % letras
+          val posicionCifrada = (posicionOriginal + desplazamientoReducido) % letras
           (primera + posicionCifrada).toChar
         } else caracter
 
-      caracterCifrado.toString + cesar(mensaje.tail, desplazamiento)
+      caracterCifrado.toString + cesar(mensaje.tail, desplazamientoReducido)
     }
   }
 
