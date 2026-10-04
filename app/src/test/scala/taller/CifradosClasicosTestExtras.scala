@@ -14,11 +14,11 @@ class CifradosClasicosTestExtras extends  AnyFunSuite {
 
   // Punto 1: cesar --------------------------------
 
-  test("cesar: xyz con 3 da abc (completa un "giro" al alfabeto)") {
-    assert(cesar("xyz", 3) == "zab")
+  test("cesar: xyz con 3 da abc (completa un giro al alfabeto)") {
+    assert(cesar("xyz", 3) == "abc")
   }
 
-  test("cesar: abc con -1 da zab (porque retrocede y da una "vuelta" al abecedario)") {
+  test("cesar: abc con -1 da zab (porque retrocede y da una vuelta al abecedario)") {
     assert(cesar("abc", -1) == "zab")
   }
 
