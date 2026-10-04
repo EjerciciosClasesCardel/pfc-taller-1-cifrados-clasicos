@@ -16,10 +16,10 @@ la nota.
 
 | Nombre completo | Código |
 |---|---|
-| | |
-| | |
-| | |
-| | |
+|Santiago Gonzalez Villada |2559994 |
+|Juan Manuel Vásquez Segura |2559961 |
+|Omar Denilson Riascos Córdoba |2559990 |
+|Manuel Alejandro Ortiz Zabala |2559767 |
 
 ## Cómo está organizado el proyecto
 
