@@ -1,279 +1,148 @@
-# Ejemplo de informe de corrección
+# Informe de corrección: puntos 1 y 2 (cifrado César)
 
-Fundamentos de Programación Funcional y Concurrente.
-Documento realizado por el docente Juan Francisco Díaz.
+Se demuestra que `cesar` y `cesarCola` cumplen su especificación para toda entrada, usando inducción estructural sobre la longitud del mensaje.
 
-## 1. Argumentar la corrección de programas recursivos
+## 1. Notación
 
-Sea $f : A \to B$ una función, y $A$ un conjunto definido recursivamente
-(recordar la definición de Matemáticas Discretas I), como por ejemplo los
-naturales o las listas.
+- $\Sigma = \{\texttt{a}, \dots, \texttt{z}\}$ son las letras minúsculas, y $\mathcal{C}$ es el conjunto de todos los caracteres.
+- $\mathcal{C}^*$ es el conjunto de cadenas; $\varepsilon$ es la cadena vacía y $|m|$ la longitud de $m$.
+- $c \cdot m'$ es la cadena con primer carácter $c$ y resto $m'$ (en Scala, `m.head` y `m.tail`).
+- $u \mathbin{+\!\!+} v$ es la concatenación de $u$ y $v$.
+- $\mathrm{pos}(c) = c - \texttt{'a'} \in \{0, \dots, 25\}$ para $c \in \Sigma$, y $\mathrm{chr}$ es su inversa.
+- $x \bmod 26 \in \{0, \dots, 25\}$ denota el módulo matemático (siempre no negativo), incluso si $x < 0$.
 
-Sea $P_f$ un programa recursivo (lineal o en árbol) desarrollado en Scala (o en
-cualquier lenguaje de programación) hecho para calcular $f$:
+### Desplazamiento de un carácter
 
-```scala
-def Pf(a: A): B = { // Pf recibe a de tipo A, y devuelve f(a) de tipo B
-  ...
-}
-```
+Para $k \in \mathbb{Z}$ se define $f_k : \mathcal{C} \to \mathcal{C}$:
 
-¿Cómo argumentar que $P_f(a)$ siempre devuelve $f(a)$ como respuesta? Es decir,
-¿cómo argumentar que $P_f$ es correcto con respecto a su especificación?
+$$
+f_k(c) =
+\begin{cases}
+\mathrm{chr}\big((\mathrm{pos}(c) + k) \bmod 26\big) & \text{si } c \in \Sigma \\
+c & \text{si } c \notin \Sigma
+\end{cases}
+$$
 
-La respuesta es sencilla: demostrando el siguiente teorema.
+### Especificación
 
-```math
-\forall a \in A : P_f(a) == f(a)
-```
+El cifrado César de $m = c_0 c_1 \cdots c_{n-1}$ con desplazamiento $k$ es:
 
-Cuando uno tiene que demostrar que algo se cumple para todos los elementos de
-un conjunto definido recursivamente, es natural usar inducción estructural. En
-términos prácticos, esto significa demostrar que:
+$$
+C(m, k) = f_k(c_0) \mathbin{+\!\!+} f_k(c_1) \mathbin{+\!\!+} \cdots \mathbin{+\!\!+} f_k(c_{n-1})
+$$
 
-- Para cada valor básico $a$ de $A$, se tiene que $P_f(a) == f(a)$.
-- Para cada valor $a \in A$ construido recursivamente a partir de otro(s)
-  valor(es) $a' \in A$, se tiene que
-  $P_f(a') == f(a') \rightarrow P_f(a) == f(a)$. (Esta es la hipótesis de
-  inducción).
+Equivalentemente, de forma recursiva:
 
-### Ejemplo: factorial recursivo
+$$
+C(\varepsilon, k) = \varepsilon, \qquad C(c \cdot m', k) = f_k(c) \mathbin{+\!\!+} C(m', k)
+$$
 
-Sea $f : \mathbb{N} \to \mathbb{N}$ la función que calcula el factorial de un
-número natural, es decir, $f(n) = n!$. Y sea $P_f$ el siguiente programa en
-Scala:
+## 2. Lemas sobre la auxiliar `desplazar`
 
-```scala
-def Pf(n: Int): Int = { // Pf recibe n de tipo Int, y devuelve n! de tipo Int
-  if (n == 0) 1 else n * Pf(n - 1)
-}
-```
+La auxiliar del código calcula `((c - 'a' + k) % 26 + 26) % 26 + 'a'`. Hay que mostrar que coincide con $f_k$.
 
-Vamos a demostrar que $\forall n \in \mathbb{N} : P_f(n) == n!$
+**Lema 1 (módulo no negativo).** Para todo $x \in \mathbb{Z}$, sea $r = x \,\%\, 26$ el resto de Scala. Entonces $((r + 26) \,\%\, 26) = x \bmod 26$.
 
-**Caso base:** $n = 0$
+*Demostración.* En Scala, $r$ tiene el signo de $x$ y cumple $|r| < 26$ y $r \equiv x \pmod{26}$. Luego $r + 26 \in (0, 52)$, es positivo, y $r + 26 \equiv x \pmod{26}$. Para un valor positivo, `%` coincide con el módulo matemático, así que $(r + 26) \,\%\, 26$ es el único representante de la clase de $x$ en $\{0, \dots, 25\}$, es decir $x \bmod 26$. $\blacksquare$
 
-```math
-P_f(0) \rightarrow \text{if } (0 == 0)\ 1 \text{ else } 0 \ast P_f(-1) \rightarrow 1
-```
+**Lema 2 (`desplazar` implementa $f_k$).** Para todo carácter $c$, `desplazar(c)` $= f_k(c)$.
 
-Por otro lado, $f(0) = 0! = 1$. Entonces $P_f(0) == f(0)$.
+*Demostración.* Si $c \in \Sigma$ (condición `c >= 'a' && c <= 'z'`), el código evalúa $\mathrm{chr}\big((\mathrm{pos}(c) + k) \bmod 26\big)$ por el Lema 1, que es $f_k(c)$. Si $c \notin \Sigma$, devuelve $c$, igual que $f_k$. En particular, las mayúsculas, tildes, `ñ`, dígitos, espacios y signos pasan sin cambio. $\blacksquare$
 
-**Caso de inducción:** $n = k + 1$, $k \geq 0$. Hay que demostrar:
-$P_f(k) == f(k) \rightarrow P_f(k + 1) == f(k + 1)$
+**Lema 3 (periodicidad e inversa).** Para toda letra $c \in \Sigma$:
 
-```math
-P_f(k+1) \rightarrow \text{if } (k+1 == 0)\ 1 \text{ else } (k+1) \ast P_f(k) \rightarrow (k+1) \ast P_f(k)
-```
+1. $f_{k+26}(c) = f_k(c)$.
+2. $f_{-k}(f_k(c)) = c$.
 
-Usando la hipótesis de inducción (HI):
+*Demostración.* (1) $(p + k + 26) \bmod 26 = (p + k) \bmod 26$. (2) $\big((p + k) \bmod 26 - k\big) \bmod 26 = p \bmod 26 = p$. Para $c \notin \Sigma$ ambas igualdades son triviales. $\blacksquare$
 
-```math
-\rightarrow (k+1) \ast k! = (k+1)!
-```
+Estos resultados justifican los casos del enunciado: $k = 29$ equivale a $k = 3$, y `cesar("fdvd", -3)` devuelve `"casa"`.
 
-Por lo tanto, $P_f(k + 1) == f(k + 1)$.
-
-Concluimos por inducción que $\forall n \in \mathbb{N} : P_f(n) == n!$
-
-### Ejemplo: el máximo de una lista
-
-Sea $f : \text{List}[\mathbb{N}] \to \mathbb{N}$ la función que calcula el
-máximo de una lista de enteros positivos, no vacía. Y sea $P_f$ el siguiente
-programa en Scala:
+## 3. Corrección de `cesar`
 
 ```scala
-def maxLin(l: List[Int]): Int = {
-  if (l.tail.isEmpty) l.head
-  else math.max(maxLin(l.tail), l.head)
-}
+def cesar(m: Mensaje, k: Int): Mensaje =
+  if (m.isEmpty) "" else desplazar(m.head).toString + cesar(m.tail, k)
 ```
 
-Demostraremos que:
+**Teorema 1.** Para todo $m \in \mathcal{C}^*$ y $k \in \mathbb{Z}$, `cesar(m, k)` $= C(m, k)$.
 
-```math
-\forall n \in \mathbb{N} \setminus \{0\} : P_f(\text{List}(a_1, a_2, \ldots, a_n)) == f(\text{List}(a_1, a_2, \ldots, a_n))
-```
+*Demostración.* Por inducción sobre $n = |m|$.
 
-**Caso base:** $n = 1$
+- **Caso base ($n = 0$).** $m = \varepsilon$, el código devuelve `""` $= \varepsilon = C(\varepsilon, k)$.
+- **Hipótesis inductiva.** Para toda cadena de longitud $n$, `cesar` devuelve $C(\cdot, k)$.
+- **Paso inductivo.** Sea $|m| = n + 1$ con $m = c \cdot m'$ y $|m'| = n$. El código devuelve `desplazar(c)` $\mathbin{+\!\!+}$ `cesar(m', k)`. Por el Lema 2, `desplazar(c)` $= f_k(c)$, y por hipótesis inductiva `cesar(m', k)` $= C(m', k)$. Entonces el resultado es $f_k(c) \mathbin{+\!\!+} C(m', k) = C(c \cdot m', k) = C(m, k)$. $\blacksquare$
 
-```math
-P_f(\text{List}(a_1)) \rightarrow \text{if } \text{List}(a_1).\text{tail.isEmpty then } \text{List}(a_1).\text{head else } \ldots \rightarrow \text{List}(a_1).\text{head} \rightarrow a_1
-```
+**Terminación.** En cada llamada, $|m|$ disminuye en 1 (se pasa `m.tail`), y la recursión se detiene al llegar a $|m| = 0$. Por tanto, la función termina tras exactamente $|m| + 1$ llamadas.
 
-Por otro lado, $f(\text{List}(a_1)) = a_1$. Entonces
-$P_f(\text{List}(a_1)) == f(\text{List}(a_1))$.
+### Cómo se encadenan los llamados
 
-**Caso de inducción:** $n = k + 1$, $k \geq 1$. Se debe demostrar:
+Ejemplo con $m = \texttt{"abc"}$ y $k = -1$ (resultado esperado: `"zab"`):
 
-```math
-P_f(\text{List}(b_1, b_2, \ldots, b_k)) == f(\text{List}(b_1, b_2, \ldots, b_k)) \rightarrow P_f(\text{List}(a_1, a_2, \ldots, a_{k+1})) == f(\text{List}(a_1, a_2, \ldots, a_{k+1}))
-```
+$$
+\begin{aligned}
+\texttt{cesar("abc", -1)} &= f_{-1}(\texttt{a}) \mathbin{+\!\!+} \texttt{cesar("bc", -1)} \\
+&= \texttt{z} \mathbin{+\!\!+} \big(f_{-1}(\texttt{b}) \mathbin{+\!\!+} \texttt{cesar("c", -1)}\big) \\
+&= \texttt{z} \mathbin{+\!\!+} \big(\texttt{a} \mathbin{+\!\!+} (f_{-1}(\texttt{c}) \mathbin{+\!\!+} \texttt{cesar("", -1)})\big) \\
+&= \texttt{z} \mathbin{+\!\!+} \big(\texttt{a} \mathbin{+\!\!+} (\texttt{b} \mathbin{+\!\!+} \varepsilon)\big) \\
+&= \texttt{"zab"}
+\end{aligned}
+$$
 
-Empecemos por calcular qué devuelve $P_f$ usando el modelo de sustitución:
+Cada llamada **espera** el resultado de la siguiente para poder concatenar; por eso el valor se construye al regresar, de adentro hacia afuera. Los valores usados salen de $f_{-1}(\texttt{a}) = \mathrm{chr}((0 - 1) \bmod 26) = \texttt{z}$, $f_{-1}(\texttt{b}) = \texttt{a}$ y $f_{-1}(\texttt{c}) = \texttt{b}$.
 
-```math
-P_f(L) \rightarrow \text{if } L.\text{tail.isEmpty then } L.\text{head else math.max}(P_f(L.\text{tail}), L.\text{head})
-```
-
-```math
-\rightarrow \text{math.max}(P_f(\text{List}(a_2, \ldots, a_{k+1})), a_1)
-```
-
-Sea $b = P_f(\text{List}(a_2, \ldots, a_{k+1}))$; por la hipótesis de
-inducción, $b = f(\text{List}(a_2, \ldots, a_{k+1}))$. Hay dos posibilidades:
-
-- Si $\text{math.max}(b, a_1) = b$, entonces $b \geq a_1$ y
- $b == f(\text{List}(a_1, a_2, \ldots, a_{k+1}))$.
-- Si $\text{math.max}(b, a_1) = a_1$, entonces $a_1 \geq b$ y
- $a_1 == f(\text{List}(a_1, a_2, \ldots, a_{k+1}))$.
-
-Por lo tanto, $P_f(L) == f(L)$.
-
-Concluimos por inducción que:
-
-```math
-\forall n \in \mathbb{N} \setminus \{0\} : P_f(\text{List}(a_1, a_2, \ldots, a_n)) == f(\text{List}(a_1, a_2, \ldots, a_n))
-```
-
-## 2. Argumentar la corrección de programas iterativos
-
-Para argumentar la corrección de programas iterativos, se debe formalizar cómo
-es la iteración. Esto implica definir:
-
-- Cómo se representa un estado de la iteración, $s$.
-- Cuál es el estado inicial, $s_0$.
-- Cuál es el estado final (o cómo se reconoce que un estado es final): $s_f$.
-- Qué condición (o predicado) cumple todo estado: $\text{Inv}(s)$ (invariante
-  de la iteración).
-- El mecanismo para pasar de un estado al siguiente: $\text{transformar}(s)$.
-  Si $s_i$ es el estado $i$, entonces $\text{transformar}(s_i) = s_{i+1}$.
-
-Un programa iterativo tiene la siguiente forma:
+## 4. Corrección de `cesarCola`
 
 ```scala
-def Pf(a: A): B = { // Pf recibe a de tipo A, y devuelve f(a) de tipo B
-  def Pf_iter(s: Estado): B =
-    if (esFinal(s)) respuesta(s) else Pf_iter(transformar(s))
-  Pf_iter(s0)
-}
+@tailrec
+final def cesarCola(m: Mensaje, k: Int, acc: Mensaje = ""): Mensaje =
+  if (m.isEmpty) acc else cesarCola(m.tail, k, acc + desplazar(m.head))
 ```
 
-Demostración de corrección:
+Aquí el resultado parcial viaja en `acc`. Se enuncia un **invariante** que relaciona el acumulador con lo que falta por procesar.
 
-- $\text{Inv}(s_0)$: el estado inicial cumple la condición invariante.
-- Si $(s_i \neq s_f \land \text{Inv}(s_i)) \rightarrow \text{Inv}(\text{transformar}(s_i))$:
-  el nuevo estado cumple la condición invariante si el estado anterior la
-  cumplía.
-- De lo anterior se concluye $\text{Inv}(s_f)$, es decir, el estado final
-  cumple la condición invariante. Luego,
-  $\text{Inv}(s_f) \rightarrow \text{respuesta}(s_f) == f(a)$.
-- Finalmente, demostrar que siempre se llega al estado final $s_f$. Esto
-  implica que
-  $P_f(a) == \text{iter}(s_0) == \text{respuesta}(s_f) == f(a)$.
+**Lema 4 (invariante del acumulador).** Para todo $m, acc \in \mathcal{C}^*$ y $k \in \mathbb{Z}$:
 
-### Ejemplo: factorial iterativo
+$$
+\texttt{cesarCola}(m, k, acc) = acc \mathbin{+\!\!+} C(m, k)
+$$
 
-Considere el siguiente programa iterativo en Scala para calcular la función
-factorial:
+*Demostración.* Por inducción sobre $n = |m|$, con $acc$ arbitrario.
 
-```scala
-def Pf(n: Int): Int = { // Pf recibe n de tipo Int, y devuelve n! de tipo Int
-  def Pf_iter(i: Int, n: Int, ac: Int): Int =
-    if (i > n) ac else Pf_iter(i + 1, n, i * ac)
-  Pf_iter(1, n, 1)
-}
-```
+- **Caso base ($n = 0$).** El código devuelve $acc$. Como $C(\varepsilon, k) = \varepsilon$, se tiene $acc \mathbin{+\!\!+} C(\varepsilon, k) = acc$. ✓
+- **Hipótesis inductiva.** Vale para toda cadena de longitud $n$ y **cualquier** acumulador.
+- **Paso inductivo.** Sea $m = c \cdot m'$ con $|m'| = n$. El código llama a $\texttt{cesarCola}(m', k, acc \mathbin{+\!\!+} f_k(c))$, usando el Lema 2. Por hipótesis inductiva, con acumulador $acc \mathbin{+\!\!+} f_k(c)$:
+  $$
+  \begin{aligned}
+  \texttt{cesarCola}(m, k, acc) &= (acc \mathbin{+\!\!+} f_k(c)) \mathbin{+\!\!+} C(m', k) \\
+  &= acc \mathbin{+\!\!+} \big(f_k(c) \mathbin{+\!\!+} C(m', k)\big) \qquad \text{(asociatividad de } \mathbin{+\!\!+}\text{)} \\
+  &= acc \mathbin{+\!\!+} C(c \cdot m', k) \;=\; acc \mathbin{+\!\!+} C(m, k) \qquad \blacksquare
+  \end{aligned}
+  $$
 
-Este programa implementa el siguiente proceso iterativo:
+La hipótesis inductiva debe valer para **cualquier** acumulador, porque en cada paso el acumulador cambia.
 
-- Un estado $s = (i, n, ac)$.
-- El estado inicial es $s_0 = (1, n, 1)$.
-- $(i, n, ac)$ es final si $i > n$, o lo que es lo mismo, si $i = n + 1$.
-- La invariante de ciclo es
-  $\text{Inv}(i, n, ac) \equiv i \leq n + 1 \land ac = (i-1)!$.
-  La invariante de ciclo es una relación que SIEMPRE se cumple en el ciclo.
-- $\text{transformar}((i, n, ac)) = (i+1, n, i \ast ac)$.
+**Teorema 2.** Para todo $m$ y $k$: $\texttt{cesarCola}(m, k) = \texttt{cesar}(m, k)$.
 
-Ahora, demostramos los puntos mencionados:
+*Demostración.* Con el valor por defecto $acc = \varepsilon$, el Lema 4 da $\texttt{cesarCola}(m, k, \varepsilon) = \varepsilon \mathbin{+\!\!+} C(m, k) = C(m, k)$, y por el Teorema 1 $C(m, k) = \texttt{cesar}(m, k)$. $\blacksquare$
 
-**1.** $\text{Inv}(s_0)$: el estado inicial cumple la condición invariante.
+**Terminación.** Igual que en `cesar`, $|m|$ disminuye en 1 en cada llamada, así que se alcanza $|m| = 0$ y la función termina tras $|m| + 1$ llamadas.
 
-```math
-s_0 = (1, n, 1) \implies 1 \leq n + 1 \land 1 = 0!
-```
+**Posición de cola.** En la rama recursiva, la llamada a `cesarCola` es la expresión completa que se devuelve: no hay ninguna operación pendiente después de ella (la concatenación se hace *antes*, al calcular el argumento `acc`). Eso es lo que permite aplicar `@tailrec` y que el proceso sea iterativo.
 
-**2.** La invariante se mantiene con la transformación de estados,
-$(s_i \neq s_f \land \text{Inv}(s_i)) \rightarrow \text{Inv}(\text{transformar}(s_i))$:
+### Cómo se encadenan los llamados
 
-1. Primer cambio, $i = i + 1$, lo que implica $ac = ((i+1) - 1)! = i!$.
-2. Segundo cambio, $ac = i \ast ac$, entonces $ac = (i - 1)! \ast i = i!$.
-3. Como se puede ver en ambos cambios indicados en la transformación, la
-   invariante se mantiene.
+Con el mismo ejemplo, $m = \texttt{"abc"}$ y $k = -1$. En cada paso, el invariante $acc \mathbin{+\!\!+} C(m, k) = \texttt{"zab"}$ se conserva:
 
-**3.** $\text{Inv}(s_f) \rightarrow \text{respuesta}(s_f) == f(a)$
+| Llamada | $m$ | $acc$ | $acc \mathbin{+\!\!+} C(m, -1)$ |
+|---|---|---|---|
+| `cesarCola("abc", -1, "")` | `abc` | `""` | `"" ++ "zab"` = `"zab"` |
+| `cesarCola("bc", -1, "z")` | `bc` | `z` | `"z" ++ "ab"` = `"zab"` |
+| `cesarCola("c", -1, "za")` | `c` | `za` | `"za" ++ "b"` = `"zab"` |
+| `cesarCola("", -1, "zab")` | `""` | `zab` | `"zab" ++ ""` = `"zab"` |
 
-```math
-(n + 1 \leq n + 1) \land ac = ((n+1)-1)! \rightarrow ac == n!
-```
+En la última fila se llega al caso base y se devuelve $acc = \texttt{"zab"}$. Se ve cómo la parte ya cifrada crece en `acc` mientras la parte pendiente `m` se consume, y su unión siempre es el resultado final.
 
-**4.** En cada paso, la componente $i$ del estado incrementa, acercándose a $n+1$.
-Después de $n$ iteraciones, se alcanza $n+1$.
+## 5. Conclusión
 
-Esto implica que $P_f(n) == \text{iter}(1, n, 1) == n!$
-
-### Ejemplo: el máximo de una lista
-
-Se desea calcular el máximo de una lista de enteros positivos, no vacía. Sea
-$f : \text{List}[\mathbb{N}] \to \mathbb{N}$ la función que calcula ese valor.
-Y sea $P_f$ el siguiente programa en Scala:
-
-```scala
-def maxIt(l: List[Int]): Int = {
-  def maxAux(max: Int, l: List[Int]): Int = {
-    if (l.isEmpty) max
-    else maxAux(math.max(max, l.head), l.tail)
-  }
-  maxAux(l.head, l.tail)
-}
-```
-
-Este programa implementa el siguiente proceso iterativo:
-
-- Un estado $s = (max, l)$ donde $l = \text{List}(a_i, a_{i+1}, \ldots, a_k)$
-  es una cola de $L$.
-- El estado inicial es
-  $s_0 = (L.\text{head}, L.\text{tail}) = (a_1, \text{List}(a_2, \ldots, a_k))$.
-- $s = (max, l)$ es final si $l$ es vacía.
-- $\text{Inv}(max, l) \equiv l = \text{List}(a_i, a_{i+1}, \ldots, a_k) \land max = f(\text{List}(a_1, a_2, \ldots, a_{i-1}))$.
-- $\text{transformar}((max, l)) = (nmax, l.\text{tail})$ donde $nmax = max$ si
-  $max \geq l.\text{head}$, y $nmax = l.\text{head}$ si no.
-
-Demostración de los puntos:
-
-**1.** $\text{Inv}(s_0)$: el estado inicial cumple la condición invariante.
-
-```math
-s_0 = (a_1, \text{List}(a_2, \ldots, a_k)) \implies a_1 = f(\text{List}(a_1))
-```
-
-**2.** $(s_i \neq s_f \land \text{Inv}(s_i)) \rightarrow \text{Inv}(\text{transformar}(s_i))$
-
-```math
-\neg\, l.\text{isEmpty} \land l = \text{List}(a_i, a_{i+1}, \ldots, a_k) \land max = f(\text{List}(a_1, a_2, \ldots, a_{i-1}))
-```
-
-```math
-\rightarrow l.\text{tail} = \text{List}(a_{i+1}, \ldots, a_k) \land nmax = f(\text{List}(a_1, \ldots, a_i))
-```
-
-**3.** $\text{Inv}(s_f) \rightarrow \text{respuesta}(s_f) == f(a)$
-
-```math
-\text{Inv}((max, \text{List}())) \rightarrow max = f(\text{List}(a_1, \ldots, a_k))
-```
-
-**4.** En cada paso, la lista $l$ se reduce, acercándose a ser vacía. Después de
-$k$ iteraciones, $l = \text{List}()$.
-
-Esto implica que $P_f(L) == \text{maxAux}(L.\text{head}, L.\text{tail}) == f(L)$
+Por los Teoremas 1 y 2, ambas funciones calculan exactamente $C(m, k)$ para todo mensaje y todo $k \in \mathbb{Z}$ (positivo, negativo o mayor que 26), y copian sin cambio todo carácter que no sea letra minúscula. Se diferencian solo en el proceso que generan: `cesar` deja una concatenación pendiente por letra, mientras que `cesarCola` mantiene el resultado parcial en el acumulador, como lo establece el Lema 4.
