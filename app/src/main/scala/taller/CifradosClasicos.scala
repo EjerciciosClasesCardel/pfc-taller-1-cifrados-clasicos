@@ -21,21 +21,36 @@ class CifradosClasicos {
 
   def esMinuscula(c: Char): Boolean = c >= 'a' && c <= 'z'
 
-  // Punto 1 -------------------------------------------------------------------
+  // Punto 1: responsable Daniela Franco Ibarra -------------------------------------------------------------------
 
   /** César con recursión lineal: una operación pendiente por letra. */
-  def cesar(m: Mensaje, k: Int): Mensaje = ???
+  def cesar(m: Mensaje, k: Int): Mensaje = {
+    def desplazar(c: Char): Char =
+      if (c >= 'a' && c <= 'z') ((((c - 'a' + k) % 26) + 26) % 26 + 'a').toChar
+      else c
 
-  // Punto 2 -------------------------------------------------------------------
+    if (m.isEmpty) ""
+    else desplazar(m.head).toString + cesar(m.tail, k)
+  }
+
+  // Punto 2: responsable Daniela Franco Ibarra -------------------------------------------------------------------
 
   /**
    * El mismo César como proceso iterativo: espacio constante.
    * Cuando la función esté escrita, anótela con @tailrec: el compilador
    * comprueba que la llamada recursiva sea lo último que hace.
    */
-  final def cesarCola(m: Mensaje, k: Int, acc: Mensaje = ""): Mensaje = ???
+  @tailrec
+  final def cesarCola(m: Mensaje, k: Int, acc: Mensaje = ""): Mensaje = {
+    def desplazar(c: Char): Char =
+      if (c >= 'a' && c <= 'z') ((((c - 'a' + k) % 26) + 26) % 26 + 'a').toChar
+      else c
 
-  // Punto 3 -------------------------------------------------------------------
+    if (m.isEmpty) acc
+    else cesarCola(m.tail, k, acc + desplazar(m.head))
+  }
+
+  // Punto 3: responsable Dayan Stefany Marulanda -------------------------------------------------------------------
 
   /**
    * Cuenta las letras minúsculas del mensaje, de mayor a menor frecuencia y,
@@ -43,7 +58,7 @@ class CifradosClasicos {
    */
   def frecuencias(m: Mensaje): Frecuencias = ???
 
-  // Punto 4 -------------------------------------------------------------------
+  // Punto 4: responsable Daniela Franco, Dayan Stefany, Juan Alejandro -------------------------------------------------------------------
 
   /**
    * Supone que la letra más frecuente del mensaje cifrado es la 'e' del
@@ -53,7 +68,7 @@ class CifradosClasicos {
 
   def romperCesar(m: Mensaje): Mensaje = ???
 
-  // Punto 5 -------------------------------------------------------------------
+  // Punto 5: responsable Juan Alejandro Marquez -------------------------------------------------------------------
 
   /**
    * Cuántos mensajes de longitud n se forman con a letras sin dos iguales
