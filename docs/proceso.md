@@ -1,131 +1,172 @@
-# Algoritmo Factorial con Recursión de Cola
+# Informe de proceso: puntos 1 y 2 (cifrado César)
 
-## Definición del Algoritmo
+Este informe explica cómo se ejecutan `cesar` (recursión lineal) y `cesarCola` (recursión de cola), mostrando el estado de la pila de llamados en cada paso para el ejemplo `cesar("casa", 3)` y `cesarCola("casa", 3)`.
 
-```Scala
-def factorial(n: Int): BigInt = {
-  @annotation.tailrec
-  def loop(x: Int, acumulador: BigInt): BigInt = {
-    if (x <= 1) acumulador
-    else loop(x - 1, acumulador * x)
-  }
-  loop(n, 1)
+## 1. Función auxiliar `desplazar`
+
+Ambas funciones usan la misma auxiliar, definida dentro de cada una:
+
+```scala
+def desplazar(c: Char): Char =
+  if (c >= 'a' && c <= 'z') ((((c - 'a' + k) % 26) + 26) % 26 + 'a').toChar
+  else c
+```
+
+Si `c` es una letra minúscula, calcula su posición $p = c - \texttt{'a'}$, le suma $k$ y reduce módulo 26. Si no lo es, devuelve el mismo carácter.
+
+El doble módulo `((x % 26) + 26) % 26` es necesario porque `%` en Scala conserva el signo del dividendo. Por ejemplo, para `'a'` con $k = -1$:
+
+| Paso | Valor |
+|---|---|
+| $p + k$ | $0 + (-1) = -1$ |
+| `-1 % 26` | $-1$ |
+| `-1 + 26` | $25$ |
+| `25 % 26` | $25$ |
+| Letra resultante | `'z'` |
+
+Para el ejemplo del informe, con $k = 3$:
+
+| Letra | Posición $p$ | $(p + 3) \bmod 26$ | Resultado |
+|---|---|---|---|
+| `c` | 2 | 5 | `f` |
+| `a` | 0 | 3 | `d` |
+| `s` | 18 | 21 | `v` |
+| `a` | 0 | 3 | `d` |
+
+## 2. Punto 1: `cesar` (recursión lineal)
+
+```scala
+def cesar(m: Mensaje, k: Int): Mensaje = {
+  def desplazar(c: Char): Char = ...   // ver sección 1
+
+  if (m.isEmpty) ""
+  else desplazar(m.head).toString + cesar(m.tail, k)
 }
 ```
 
-* La función `factorial` calcula el factorial de un número `n` utilizando **recursión de cola**.
-* La función interna `loop` es la que hace la recursión:
+- **Caso base:** si el mensaje es vacío, el resultado es `""`.
+- **Caso recursivo:** se cifra la primera letra y se concatena con el resultado de cifrar el resto.
 
-  * Recibe dos parámetros:
+La clave está en la concatenación `+`: **se ejecuta después** de que vuelve la llamada recursiva. Mientras esa llamada no termine, la operación queda pendiente y su marco debe seguir en la pila.
 
-    * `x`: el valor actual decreciente hasta llegar a 1.
-    * `acumulador`: donde se guarda el resultado parcial en cada paso.
-* El decorador `@annotation.tailrec` obliga a que la función sea optimizada como recursión de cola, es decir, **no se acumulan llamados en la pila**.
+### 2.1. Traza de la evaluación
 
-## Explicación paso a paso
-
-### Caso base
-
-```Scala
-if (x <= 1) acumulador
+```
+cesar("casa", 3)
+= "f" + cesar("asa", 3)
+= "f" + ("d" + cesar("sa", 3))
+= "f" + ("d" + ("v" + cesar("a", 3)))
+= "f" + ("d" + ("v" + ("d" + cesar("", 3))))
+= "f" + ("d" + ("v" + ("d" + "")))
+= "f" + ("d" + ("v" + "d"))
+= "f" + ("d" + "vd")
+= "f" + "dvd"
+= "fdvd"
 ```
 
-Cuando `x` llega a `1`, la función retorna directamente el valor acumulado, evitando más llamadas.
+### 2.2. Estado de la pila paso a paso
 
-### Caso recursivo
+Cada línea muestra la pila de abajo hacia arriba; el último marco es el que se está ejecutando.
 
-```Scala
-loop(x - 1, acumulador * x)
-```
+**Fase de ida (la pila crece):**
 
-En cada llamada:
+| Paso | Pila de llamados | Operación pendiente al final |
+|---|---|---|
+| 1 | `cesar("casa")` | |
+| 2 | `cesar("casa")` → `cesar("asa")` | `"f" + _` |
+| 3 | `cesar("casa")` → `cesar("asa")` → `cesar("sa")` | `"d" + _` |
+| 4 | `cesar("casa")` → `cesar("asa")` → `cesar("sa")` → `cesar("a")` | `"v" + _` |
+| 5 | `cesar("casa")` → `cesar("asa")` → `cesar("sa")` → `cesar("a")` → `cesar("")` | `"d" + _` |
 
-* Se reduce el valor de `x` en 1.
-* Se multiplica el acumulador por `x` y se pasa a la siguiente iteración.
-* Como es recursión de cola, la llamada recursiva es la **última instrucción** en ejecutarse, lo que permite a Scala optimizar la pila.
+En el paso 5 se llega al caso base y la pila alcanza su altura máxima: **5 marcos** (para un mensaje de longitud $n$, son $n + 1$).
 
----
+**Fase de vuelta (la pila se desarma resolviendo lo pendiente):**
 
-## Llamados de pila en recursión de cola
-
-Ejemplo:
-
-```Scala
-factorial(5)
-```
-
-### Paso 1: Llamada inicial
-
-```Scala
-loop(5, 1)
-```
-
-### Paso 2: Primera iteración
-
-```Scala
-loop(4, 5)   // acumulador = 1 * 5
-```
-
-### Paso 3: Segunda iteración
-
-```Scala
-loop(3, 20)  // acumulador = 5 * 4
-```
-
-### Paso 4: Tercera iteración
-
-```Scala
-loop(2, 60)  // acumulador = 20 * 3
-```
-
-### Paso 5: Cuarta iteración
-
-```Scala
-loop(1, 120) // acumulador = 60 * 2
-```
-
-### Paso 6: Caso base
-
-```Scala
-return 120
-```
-
----
-
-## Diferencia con recursión normal
-
-* En **recursión normal** cada llamada queda en la pila esperando a que termine la siguiente, lo que puede causar desbordamiento si `n` es muy grande.
-* En **recursión de cola**, el compilador transforma el proceso en un **bucle optimizado**, por lo que no se guarda cada llamada en la pila y el algoritmo puede ejecutarse para valores muy grandes sin problema.
-
----
-
-## Ejemplo de uso
-
-```Scala
-val resultado = factorial(5)
-println(resultado)  // 120
-```
-
-El resultado de `factorial(5)` es `120`.
-
-
-## Diagrama de llamados de pila con recursión de cola
+| Paso | Marco que retorna | Valor devuelto | Pila que queda |
+|---|---|---|---|
+| 6 | `cesar("")` | `""` | 4 marcos |
+| 7 | `cesar("a")` | `"d" + ""` = `"d"` | 3 marcos |
+| 8 | `cesar("sa")` | `"v" + "d"` = `"vd"` | 2 marcos |
+| 9 | `cesar("asa")` | `"d" + "vd"` = `"dvd"` | 1 marco |
+| 10 | `cesar("casa")` | `"f" + "dvd"` = `"fdvd"` | vacía |
 
 ```mermaid
-sequenceDiagram
-    participant Main as factorial(5)
-    participant L1 as loop(5, 1)
-    participant L2 as loop(4, 5)
-    participant L3 as loop(3, 20)
-    participant L4 as loop(2, 60)
-    participant L5 as loop(1, 120)
-
-    Main->>L1: llamada inicial
-    L1->>L2: tail call con (4, 5)
-    L2->>L3: tail call con (3, 20)
-    L3->>L4: tail call con (2, 60)
-    L4->>L5: tail call con (1, 120)
-    L5-->>Main: return 120
+flowchart TD
+    A["cesar('casa', 3)"] -->|"llama"| B["cesar('asa', 3)"]
+    B -->|"llama"| C["cesar('sa', 3)"]
+    C -->|"llama"| D["cesar('a', 3)"]
+    D -->|"llama"| E["cesar('', 3)"]
+    E -->|"retorna ''"| D
+    D -->|"retorna 'd'"| C
+    C -->|"retorna 'vd'"| B
+    B -->|"retorna 'dvd'"| A
+    A -->|"retorna 'fdvd'"| R["resultado"]
 ```
 
+### 2.3. ¿Por qué la pila crece?
 
+Porque la llamada recursiva **no es lo último** que hace la función: tras ella aún falta concatenar. Cada marco debe guardar su letra ya cifrada hasta que el resto del mensaje termine de procesarse. Resultado: uso de pila proporcional a la longitud del mensaje, $O(n)$. Con mensajes muy largos esto puede producir un `StackOverflowError`.
+
+## 3. Punto 2: `cesarCola` (recursión de cola)
+
+```scala
+@tailrec
+final def cesarCola(m: Mensaje, k: Int, acc: Mensaje = ""): Mensaje = {
+  def desplazar(c: Char): Char = ...   // ver sección 1
+
+  if (m.isEmpty) acc
+  else cesarCola(m.tail, k, acc + desplazar(m.head))
+}
+```
+
+- **Caso base:** si el mensaje es vacío, el resultado es el acumulador.
+- **Caso recursivo:** se cifra la primera letra, se agrega al final del acumulador y se llama con el resto del mensaje.
+
+Aquí la llamada recursiva **es lo último** que se ejecuta: no queda ninguna operación pendiente. El resultado parcial no se guarda en la pila sino que viaja como argumento en `acc`.
+
+### 3.1. Traza de la evaluación
+
+```
+cesarCola("casa", 3, "")
+→ cesarCola("asa", 3, "f")
+→ cesarCola("sa",  3, "fd")
+→ cesarCola("a",   3, "fdv")
+→ cesarCola("",    3, "fdvd")
+= "fdvd"
+```
+
+### 3.2. Estado de la pila paso a paso
+
+| Paso | `m` | `acc` | Pila de llamados |
+|---|---|---|---|
+| 1 | `"casa"` | `""` | 1 marco |
+| 2 | `"asa"` | `"f"` | 1 marco (reutilizado) |
+| 3 | `"sa"` | `"fd"` | 1 marco (reutilizado) |
+| 4 | `"a"` | `"fdv"` | 1 marco (reutilizado) |
+| 5 | `""` | `"fdvd"` | 1 marco: caso base, devuelve `acc` |
+
+```mermaid
+flowchart LR
+    S1["m = 'casa'<br/>acc = ''"] --> S2["m = 'asa'<br/>acc = 'f'"]
+    S2 --> S3["m = 'sa'<br/>acc = 'fd'"]
+    S3 --> S4["m = 'a'<br/>acc = 'fdv'"]
+    S4 --> S5["m = ''<br/>acc = 'fdvd'"]
+    S5 --> R["resultado: 'fdvd'"]
+```
+
+### 3.3. ¿Por qué la pila no crece?
+
+Como la llamada recursiva está en posición de cola, el compilador, gracias a `@tailrec`, la transforma en un salto: reutiliza el mismo marco actualizando los valores de `m` y `acc`. Si la llamada **no** estuviera en posición de cola, `@tailrec` produciría un error de compilación. Por eso el proceso corre en espacio de pila constante, $O(1)$, sin importar la longitud del mensaje.
+
+## 4. Comparación
+
+| Aspecto | `cesar` | `cesarCola` |
+|---|---|---|
+| Tipo de proceso | Recursivo lineal | Iterativo (recursión de cola) |
+| Dónde queda el resultado parcial | En las operaciones pendientes de la pila | En el acumulador `acc` |
+| Marcos de pila para $n$ letras | $n + 1$ | 1 |
+| Espacio de pila | $O(n)$ | $O(1)$ |
+| Riesgo con mensajes muy largos | `StackOverflowError` | Ninguno por pila |
+| Cantidad de llamadas | $n + 1$ | $n + 1$ |
+
+Ambas hacen exactamente la misma cantidad de llamadas; lo que cambia es **cuántas están vivas a la vez** en la pila.
