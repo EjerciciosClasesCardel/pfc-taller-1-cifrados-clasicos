@@ -89,7 +89,10 @@ class CifradosClasicos {
    */
   def desplazamientoProbable(m: Mensaje): Int = ???
 
-  def romperCesar(m: Mensaje): Mensaje = ???
+  def romperCesar(m: Mensaje): Mensaje = {
+    val desplazamiento = desplazamientoProbable(m)
+    cesar(m, -desplazamiento)
+  }
 
   // Punto 5 -------------------------------------------------------------------
 
