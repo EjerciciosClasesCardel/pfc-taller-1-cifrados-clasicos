@@ -71,9 +71,29 @@ class CifradosClasicos {
    * Cuenta las letras minúsculas del mensaje, de mayor a menor frecuencia y,
    * en empate, en orden alfabético. El recorrido es recursivo de cola.
    */
-  def frecuencias(m: Mensaje): Frecuencias = ???
+  def frecuencias(m: Mensaje): Frecuencias = {
+    @tailrec
+    def contar(i: Int, acc: Frecuencias): Frecuencias =
+      if (i >= m.length) {
+        acc
+      } else {
+        val c = m(i)
+        if (esMinuscula(c)) {
+          val antes = acc.find(par => par._1 == c).map(par => par._2).getOrElse(0)
+          val sinC = acc.filter(par => par._1 != c)
+          contar(i + 1, (c, antes + 1) :: sinC)
+        } else {
+          contar(i + 1, acc)
+        }
+      }
 
-  // Punto 4 -------------------------------------------------------------------
+    // Mayor frecuencia primero; en empate, orden alfabético.
+    contar(0, Nil).sortBy(par => (-par._2, par._1))
+  }
+
+
+
+    // Punto 4 -------------------------------------------------------------------
 
   /**
    * Supone que la letra más frecuente del mensaje cifrado es la 'e' del
