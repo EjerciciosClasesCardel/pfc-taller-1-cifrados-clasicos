@@ -24,7 +24,27 @@ class CifradosClasicos {
   // Punto 1 -------------------------------------------------------------------
 
   /** César con recursión lineal: una operación pendiente por letra. */
-  def cesar(m: Mensaje, k: Int): Mensaje = ???
+  def cesar(m: Mensaje, k: Int): Mensaje = {
+    // Función auxiliar para cifrar una sola letra
+      def desplazar (c: Char): Char = {
+        /**
+        Para cifrar unicamente las minúsculas (desde la a hasta la z (abecedario inglés))
+        (c - primera) es para la posicion de la letra (a=0 --- z= 25)
+        +k define cuantas posiciones moveremos la letra
+        % letras + letras) % letras): esta para evitar que el que el modulo nunca de negativo (sirve para k negativo y k > 26)
+        y ya con primera + .... volvemos a letras
+        */
+        if (esMinuscula(c)) (primera + ((c - primera + k ) % letras + letras) % letras).toChar
+        // espacios, digitos, mayusculas y signos pasan como si nada
+        else c
+      }
+
+    // Caso por defecto, dara resultado vacio
+    if (m.isEmpty) ""
+    // recursion: se cifra la primera letra y se continua con la siguiente, la concatenación
+    // queda pendiente: por ello crece la pila
+    else desplazar(m.head).toString + cesar(m.tail, k)
+  }
 
   // Punto 2 -------------------------------------------------------------------
 
@@ -33,7 +53,23 @@ class CifradosClasicos {
    * Cuando la función esté escrita, anótela con @tailrec: el compilador
    * comprueba que la llamada recursiva sea lo último que hace.
    */
-  final def cesarCola(m: Mensaje, k: Int, acc: Mensaje = ""): Mensaje = ???
+
+  //@tailrec le pide al compilador la verificacion de la llamada recursiva
+  // sea lo **ultimo** que hace la función, si no lo es, enviara un error al momento de compilar
+  @tailrec
+  final def cesarCola(m: Mensaje, k: Int, acc: Mensaje = ""): Mensaje = {
+    //la explicacion de esta funcion ya se encuentra explicada en el punto 1, asi que sobre escribirlo denuevo
+    def desplazar (c: Char): Char =
+      if (esMinuscula(c)) (primera + ((c - primera + k) % letras + letras) % letras).toChar
+      else c
+
+    // Caso base: si ya no quedan letras por cifras, entonces devuelve lo acumulado en acc
+    if (m.isEmpty) acc
+    // Caso recursivo: se cifra la primera letra y se agrega al acumulador, el cual es el acc
+    else cesarCola(m.tail, k, acc + desplazar(m.head))
+  }
+
+
 
   // Punto 3 -------------------------------------------------------------------
 
