@@ -22,9 +22,22 @@ class CifradosClasicos {
   def esMinuscula(c: Char): Boolean = c >= 'a' && c <= 'z'
 
   // Punto 1 -------------------------------------------------------------------
-
+  def cifrarChar(c: Char, k: Int): Char = {
+    if (esMinuscula(c)) {
+      val nuevaPosicion = Math.floorMod(c - 'a' + k, 26)
+      ('a' + nuevaPosicion).toChar
+    } else {
+      c
+    }
+  }
   /** César con recursión lineal: una operación pendiente por letra. */
-  def cesar(m: Mensaje, k: Int): Mensaje = ???
+  def cesar(m: Mensaje, k: Int): Mensaje = {
+    if (m.isEmpty) {
+      ""
+    } else {
+      cifrarChar(m.head, k).toString + cesar(m.tail, k)
+    }
+  }
 
   // Punto 2 -------------------------------------------------------------------
 
@@ -33,7 +46,14 @@ class CifradosClasicos {
    * Cuando la función esté escrita, anótela con @tailrec: el compilador
    * comprueba que la llamada recursiva sea lo último que hace.
    */
-  final def cesarCola(m: Mensaje, k: Int, acc: Mensaje = ""): Mensaje = ???
+  @tailrec
+  final def cesarCola(m: Mensaje, k: Int, acc: Mensaje = ""): Mensaje = {
+    if (m.isEmpty) acc
+    else {
+      cesarCola(m.tail,k ,acc + cifrarChar(m.head,k))
+    }
+  }
+
 
   // Punto 3 -------------------------------------------------------------------
 
