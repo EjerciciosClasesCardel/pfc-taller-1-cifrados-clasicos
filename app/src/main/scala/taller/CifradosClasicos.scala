@@ -35,9 +35,9 @@ class CifradosClasicos {
 
         val ajustada = if (nuevaposicion < 0) nuevaposicion + 26 else nuevaposicion
         val nuevaLetra = ('a' + ajustada).toChar
-        nuevaLetra + cesar(m.tail, k)
+        nuevaLetra.toString + cesar(m.tail, k)
       }else{
-        c + cesar(m.tail, k)
+        c.toString + cesar(m.tail, k)
       }
     }
     
