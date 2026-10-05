@@ -24,8 +24,23 @@ class CifradosClasicos {
   // Punto 1 -------------------------------------------------------------------
 
   /** César con recursión lineal: una operación pendiente por letra. */
-  def cesar(m: Mensaje, k: Int): Mensaje = ???
+  def cesar(m: Mensaje, k: Int): Mensaje =
+    if (m.isEmpty){
+      ""
+    }else{
+      val c = m.head
+      if (esMinuscula(c)){
+        val posicion = c - 'a'
+        val nuevaposicion = (posicion + k).toInt % 26
 
+        val ajustada = if (nuevaposicion < 0) nuevaposicion + 26 else nuevaposicion
+        val nuevaLetra = ('a' + ajustada).toChar
+        nuevaLetra + cesar(m.tail, k)
+      }else{
+        c + cesar(m.tail, k)
+      }
+    }
+    
   // Punto 2 -------------------------------------------------------------------
 
   /**
@@ -33,8 +48,23 @@ class CifradosClasicos {
    * Cuando la función esté escrita, anótela con @tailrec: el compilador
    * comprueba que la llamada recursiva sea lo último que hace.
    */
-  final def cesarCola(m: Mensaje, k: Int, acc: Mensaje = ""): Mensaje = ???
+  @tailrec
+  final def cesarCola(m: Mensaje, k: Int, acc: Mensaje = ""): Mensaje =
 
+    if (m.isEmpty)
+      acc
+      else{
+        val c = m.head
+        if (esMinuscula(c)){
+          val posicion = c - 'a'
+          val nuevapo = (posicion + k).toInt%26
+          val ajustar = if (nuevapo < 0) nuevapo +26 else nuevapo
+          val nuevaletra = ('a'+ajustar).toChar
+          cesarCola(m.tail,k, acc+nuevaletra)
+        }else{
+            cesarCola(m.tail,k,acc+c)
+        }
+      }
   // Punto 3 -------------------------------------------------------------------
 
   /**
