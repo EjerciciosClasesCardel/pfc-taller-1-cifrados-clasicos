@@ -16,10 +16,9 @@ la nota.
 
 | Nombre completo | Código |
 |---|---|
-| | |
-| | |
-| | |
-| | |
+| Andres Felipe Velasquez Moreno| 2459534 |
+| Juan Sebastian falla cañarte | 202459599 |
+| Jessica Viviana Viscue | 2459376 |
 
 ## Cómo está organizado el proyecto
 
