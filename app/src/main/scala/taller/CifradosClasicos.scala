@@ -129,5 +129,21 @@ class CifradosClasicos {
    * Vigenère: cada letra se corre según la letra de la clave que le toca. Lo
    * que no es letra minúscula se copia y no consume clave.
    */
-  def vigenere(m: Mensaje, clave: Clave): Mensaje = ???
+  def vigenere(m: Mensaje, clave: Clave): Mensaje = {
+  if (m.isEmpty) ""
+    else {
+      val c = m.head // inicio del mensaje
+      if(clave.isEmpty) m
+      else{
+        if (esMinuscula(c)) {
+        val desplazamiento = clave.head - 'a'
+        val letra = ((c - 'a' + desplazamiento) % 26 + 'a').toChar // nueva letra del cifradp
+
+        letra + vigenere(m.tail, clave.tail + clave.head) // la clave va rotando ciclicamente
+      } else {
+        c + vigenere(m.tail, clave)
+      }
+      }
+    }
+  }
 }
