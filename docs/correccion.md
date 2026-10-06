@@ -277,3 +277,74 @@ s_0 = (a_1, \text{List}(a_2, \ldots, a_k)) \implies a_1 = f(\text{List}(a_1))
 $k$ iteraciones, $l = \text{List}()$.
 
 Esto implica que $P_f(L) == \text{maxAux}(L.\text{head}, L.\text{tail}) == f(L)$
+
+
+## 3. Punto 3: `frecuencias` (iterativa)
+
+**Especificación.** Sea $\text{cuenta}(c, m) = |\{\, j < |m| : m_j = c \,\}|$.
+Entonces $\text{Frec}(m)$ es la lista de los pares $(c, \text{cuenta}(c, m))$
+para las letras $c$ con $\text{cuenta}(c, m) > 0$, **ordenada** de modo que $(c, x)$
+va antes que $(c', x')$ si $x > x'$, o si $x = x'$ y $c < c'$.
+
+```scala
+// Fragmento abreviado: ver CifradosClasicos.scala para el código completo.
+def frecuencias(m: Mensaje): Frecuencias = {
+  @tailrec
+  def contar(i: Int, acc: Frecuencias): Frecuencias =
+    if (i >= m.length) acc
+    else if (esMinuscula(m(i)))
+      contar(i + 1, (m(i), antes + 1) :: acc.filter(par => par._1 != m(i)))
+    else contar(i + 1, acc)
+
+  contar(0, Nil).sortBy(par => (-par._2, par._1))
+}
+```
+
+(`antes` es la cuenta que `acc` ya tenía de `m(i)`, o 0 si no aparecía).
+
+El proceso iterativo de `contar`:
+
+- Un estado $s = (i, acc)$.
+- El estado inicial es $s_0 = (0, \text{Nil})$.
+- $(i, acc)$ es final si $i \geq n$.
+- La invariante es
+
+```math
+\text{Inv}(i, acc) \equiv 0 \leq i \leq n \ \land\ \text{las letras de } acc \text{ son distintas} \ \land\ \text{conj}(acc) = \{\, (c, \text{cuenta}(c, m[..i))) : c \text{ letra},\ \text{cuenta}(c, m[..i)) > 0 \,\}
+```
+
+donde $\text{conj}(acc)$ es el conjunto de pares de la lista.
+- $\text{transformar}((i, acc)) = (i + 1, acc')$, con $acc' = acc$ si $m_i$ no es
+  letra, y si es la letra $c$,
+  $acc' = (c, \text{antes} + 1) :: acc''$, donde $acc''$ es $acc$ sin el par de la
+  letra $c$.
+
+**1.** $\text{Inv}(s_0)$: con $i = 0$ el prefijo es vacío y ninguna letra
+tiene cuenta positiva; $\text{conj}(\text{Nil}) = \emptyset$ y no hay letras
+repetidas.
+
+**2.** La invariante se mantiene. Sea $i < n$ y $c = m_i$.
+
+- Si $c$ no es letra, ninguna cuenta cambia al pasar de $m[..i)$ a $m[..i+1)$ y
+  $acc' = acc$.
+- Si $c$ es letra, `antes` es $\text{cuenta}(c, m[..i))$ por la invariante (o 0 si
+  $c$ no aparece en $acc$, que coincide con que su cuenta es 0). El par
+  nuevo $(c, \text{antes} + 1)$ es la cuenta de $c$ en $m[..i+1)$. El `filter`
+  quita el par viejo de $c$, y las demás letras conservan su cuenta, que no
+  cambió. Como el par viejo se quitó, $c$ aparece una sola vez: las letras
+  siguen siendo distintas.
+
+**3.** Cuando $i = n$ se cumple $m[..n) = m$, y por la invariante
+$\text{conj}(acc)$ es exactamente el conjunto de pares de $\text{Frec}(m)$,
+sin orden.
+
+**4.** $i$ crece en 1 por paso y se detiene en $n$.
+
+**El orden.** `sortBy` reordena la lista por la clave $(-x, c)$, con $x$ la
+frecuencia. Las letras son distintas, así que las claves **nunca se repiten**:
+la clave define un orden total y el resultado es único. Ordenar por $-x$ pone la
+mayor frecuencia primero, y en empate manda la letra menor. Eso es exactamente
+el orden de $\text{Frec}$. Por tanto $\text{frecuencias}(m) == \text{Frec}(m)$. $\blacksquare$
+
+La recursión de `contar` es de cola: la llamada recursiva es lo último que se
+hace en cada rama, y `@tailrec` lo verifica en compilación.

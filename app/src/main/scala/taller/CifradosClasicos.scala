@@ -87,7 +87,6 @@ class CifradosClasicos {
         }
       }
 
-    // Mayor frecuencia primero; en empate, orden alfabético.
     contar(0, Nil).sortBy(par => (-par._2, par._1))
   }
 
