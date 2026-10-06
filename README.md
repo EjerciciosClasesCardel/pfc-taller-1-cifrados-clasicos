@@ -17,7 +17,7 @@ la nota.
 | Nombre completo | Código  |
 |---|---------|
 |Sebastian Castro Cárdenas| 2559772 |
-|Juan Stevan Cataño Hernandez|         |
+|Juan Stevan Cataño Hernandez| 2559832 |
 |Santiago Velandia Lozano| 2559822 |
 |David Alejandro López| 2559790 |
 
