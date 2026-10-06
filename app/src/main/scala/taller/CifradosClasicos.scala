@@ -25,22 +25,22 @@ class CifradosClasicos {
 
   /** César con recursión lineal: una operación pendiente por letra. */
   def cesar(m: Mensaje, k: Int): Mensaje =
-    if (m.isEmpty){
+    if (m.isEmpty) {
       ""
-    }else{
+    } else {
       val c = m.head
-      if (esMinuscula(c)){
+      if (esMinuscula(c)) {
         val posicion = c - 'a'
         val nuevaposicion = (posicion + k).toInt % 26
 
         val ajustada = if (nuevaposicion < 0) nuevaposicion + 26 else nuevaposicion
         val nuevaLetra = ('a' + ajustada).toChar
         nuevaLetra.toString + cesar(m.tail, k)
-      }else{
+      } else {
         c.toString + cesar(m.tail, k)
       }
     }
-    
+
   // Punto 2 -------------------------------------------------------------------
 
   /**
@@ -53,18 +53,18 @@ class CifradosClasicos {
 
     if (m.isEmpty)
       acc
-      else{
-        val c = m.head
-        if (esMinuscula(c)){
-          val posicion = c - 'a'
-          val nuevapo = (posicion + k).toInt%26
-          val ajustar = if (nuevapo < 0) nuevapo +26 else nuevapo
-          val nuevaletra = ('a'+ajustar).toChar
-          cesarCola(m.tail,k, acc+nuevaletra)
-        }else{
-            cesarCola(m.tail,k,acc+c)
-        }
+    else {
+      val c = m.head
+      if (esMinuscula(c)) {
+        val posicion = c - 'a'
+        val nuevapo = (posicion + k).toInt % 26
+        val ajustar = if (nuevapo < 0) nuevapo + 26 else nuevapo
+        val nuevaletra = ('a' + ajustar).toChar
+        cesarCola(m.tail, k, acc + nuevaletra)
+      } else {
+        cesarCola(m.tail, k, acc + c)
       }
+    }
   // Punto 3 -------------------------------------------------------------------
 
   /**
@@ -92,7 +92,7 @@ class CifradosClasicos {
 
 
 
-    // Punto 4 -------------------------------------------------------------------
+  // Punto 4 -------------------------------------------------------------------
 
   /**
    * Supone que la letra más frecuente del mensaje cifrado es la 'e' del
@@ -108,11 +108,47 @@ class CifradosClasicos {
    * Cuántos mensajes de longitud n se forman con a letras sin dos iguales
    * seguidas.
    */
-  def combinaciones(n: Int, a: Int): BigInt = ???
+  def combinaciones(n: Int, a: Int): BigInt = {
+    @tailrec
+    def aux(i: Int, acc: BigInt): BigInt =
+      if (i > n) acc
+      else aux(i + 1, acc * (a - 1))
+
+    if (n <= 0) BigInt(1)
+    else if (n == 1) BigInt(a)
+    else aux(2, BigInt(a))
+  }
 
   /**
    * Vigenère: cada letra se corre según la letra de la clave que le toca. Lo
    * que no es letra minúscula se copia y no consume clave.
    */
-  def vigenere(m: Mensaje, clave: Clave): Mensaje = ???
+
+  def vigenere(m: Mensaje, clave: Clave): Mensaje = {
+    if (clave.isEmpty) {
+      m
+    } else {
+      @tailrec
+      def aux(i: Int, idxClave: Int, acc: Mensaje): Mensaje = {
+        if (i >= m.length) {
+          acc
+        } else {
+          val c = m(i)
+          if (esMinuscula(c)) {
+            val posicion = c - 'a'
+            val k = clave(idxClave % clave.length) - 'a'
+            val nuevaposicion = (posicion + k) % 26
+            val ajustada = if (nuevaposicion < 0) nuevaposicion + 26 else nuevaposicion
+            val nuevaLetra = ('a' + ajustada).toChar
+            aux(i + 1, idxClave + 1, acc + nuevaLetra)
+          } else {
+            aux(i + 1, idxClave, acc + c)
+          }
+        }
+      }
+
+      aux(0, 0, "")
+    }
+  }
+
 }
