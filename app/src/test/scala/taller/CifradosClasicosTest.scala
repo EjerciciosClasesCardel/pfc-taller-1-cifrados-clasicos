@@ -36,7 +36,7 @@ class CifradosClasicosTest extends AnyFunSuite {
   }
 
   // Punto 2 -------------------------------------------------------------------
-/**
+
   test("cesarCola: casa con 3 da fdvd") { assert(cesarCola("casa", 3) == "fdvd") }
   test("cesarCola: hola mundo con 1") { assert(cesarCola("hola mundo", 1) == "ipmb nvoep") }
   test("cesarCola: con 0 el mensaje no cambia") { assert(cesarCola("abc", 0) == "abc") }
@@ -51,7 +51,7 @@ class CifradosClasicosTest extends AnyFunSuite {
     val largo = "abcdefghij" * 20000
     assert(cesarCola(largo, 1).length == largo.length)
   }
-
+  /**
   // Punto 3 -------------------------------------------------------------------
 
   test("frecuencias: casa") {
