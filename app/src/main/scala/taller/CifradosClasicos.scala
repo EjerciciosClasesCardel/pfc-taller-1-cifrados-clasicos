@@ -148,7 +148,7 @@ class CifradosClasicos {
         }
       }
 
-      aux(0, 0, "") // <--- ¡Aquí se inicia la recursión!
+      aux(0, 0, "")
     }
   }
 
