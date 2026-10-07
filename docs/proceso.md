@@ -30,133 +30,7 @@
 |   x   |     120      |       23        |
 |   y   |     121      |       24        |
 |   z   |     122      |       25        |
-## Definición del Algoritmo
 
-```Scala
-def factorial(n: Int): BigInt = {
-  @annotation.tailrec
-  def loop(x: Int, acumulador: BigInt): BigInt = {
-    if (x <= 1) acumulador
-    else loop(x - 1, acumulador * x)
-  }
-  loop(n, 1)
-}
-```
-
-* La función `factorial` calcula el factorial de un número `n` utilizando **recursión de cola**.
-* La función interna `loop` es la que hace la recursión:
-
-  * Recibe dos parámetros:
-
-    * `x`: el valor actual decreciente hasta llegar a 1.
-    * `acumulador`: donde se guarda el resultado parcial en cada paso.
-* El decorador `@annotation.tailrec` obliga a que la función sea optimizada como recursión de cola, es decir, **no se acumulan llamados en la pila**.
-
-## Explicación paso a paso
-
-### Caso base
-
-```Scala
-if (x <= 1) acumulador
-```
-
-Cuando `x` llega a `1`, la función retorna directamente el valor acumulado, evitando más llamadas.
-
-### Caso recursivo
-
-```Scala
-loop(x - 1, acumulador * x)
-```
-
-En cada llamada:
-
-* Se reduce el valor de `x` en 1.
-* Se multiplica el acumulador por `x` y se pasa a la siguiente iteración.
-* Como es recursión de cola, la llamada recursiva es la **última instrucción** en ejecutarse, lo que permite a Scala optimizar la pila.
-
----
-
-## Llamados de pila en recursión de cola
-
-Ejemplo:
-
-```Scala
-factorial(5)
-```
-
-### Paso 1: Llamada inicial
-
-```Scala
-loop(5, 1)
-```
-
-### Paso 2: Primera iteración
-
-```Scala
-loop(4, 5)   // acumulador = 1 * 5
-```
-
-### Paso 3: Segunda iteración
-
-```Scala
-loop(3, 20)  // acumulador = 5 * 4
-```
-
-### Paso 4: Tercera iteración
-
-```Scala
-loop(2, 60)  // acumulador = 20 * 3
-```
-
-### Paso 5: Cuarta iteración
-
-```Scala
-loop(1, 120) // acumulador = 60 * 2
-```
-
-### Paso 6: Caso base
-
-```Scala
-return 120
-```
-
----
-
-## Diferencia con recursión normal
-
-* En **recursión normal** cada llamada queda en la pila esperando a que termine la siguiente, lo que puede causar desbordamiento si `n` es muy grande.
-* En **recursión de cola**, el compilador transforma el proceso en un **bucle optimizado**, por lo que no se guarda cada llamada en la pila y el algoritmo puede ejecutarse para valores muy grandes sin problema.
-
----
-
-## Ejemplo de uso
-
-```Scala
-val resultado = factorial(5)
-println(resultado)  // 120
-```
-
-El resultado de `factorial(5)` es `120`.
-
-
-## Diagrama de llamados de pila con recursión de cola
-
-```mermaid
-sequenceDiagram
-    participant Main as factorial(5)
-    participant L1 as loop(5, 1)
-    participant L2 as loop(4, 5)
-    participant L3 as loop(3, 20)
-    participant L4 as loop(2, 60)
-    participant L5 as loop(1, 120)
-
-    Main->>L1: llamada inicial
-    L1->>L2: tail call con (4, 5)
-    L2->>L3: tail call con (3, 20)
-    L3->>L4: tail call con (2, 60)
-    L4->>L5: tail call con (1, 120)
-    L5-->>Main: return 120
-```
 
 ```Scala
  def cesar(m: Mensaje, k: Int): Mensaje = {
@@ -335,4 +209,120 @@ sequenceDiagram
 
 
 # Algoritmo Cesar con Recursión en cola
- 
+
+## Definición del Algoritmo
+
+```Scala
+@tailrec
+final def cesarCola(m: Mensaje, k: Int, acc: Mensaje = ""): Mensaje = {
+if(m.isEmpty){acc}
+else {
+val c = m.head
+val charCifrado = if (c.isLetter && esMinuscula(c)) {
+(((c.toInt - primera + k) % 26 + letras) % 26 + primera).toChar
+} else {
+c
+}
+cesarCola (m.tail, k,acc + charCifrado)
+}
+}
+```
+* la funcion cesarCola al igual que la funcion cesar recibe un mensaje 
+  y una clave para cifrarlo, recorre el texto letra a letra de principio a fin.
+* Recibe dos parametros:
+  * `m`: es la cadena de texto o mensaje que se quiere cifrar.
+  * `k`: es la clave que indica el numero de posiciones que se va a mover la letra.
+
+* El decorador `@tailrec` permite que el programa procese textos infinitos usando el mismo espacio de memoria.
+
+
+
+
+## Explicación paso a paso
+
+### Caso base
+
+```Scala
+if(m.isEmpty){acc}
+```
+Cuando m esta vacio devuelve lo que hay en el acomulador y termina la ejecucion
+
+
+### Caso recursivo
+
+```Scala
+ cesarCola(m.tail, k, acc + charCifrado)
+```
+
+En cada llamada:
+* Se reduce el tamaño del mensaje pasando solo lo que queda de la cadena (m.tail).
+* Se calcula el cifrado del carácter actual (m.head) y se concatena al final del acumulador (acc + charCifrado).
+* Al ser una recursión de cola, 
+* la llamada a cesarCola es la última instrucción en ejecutarse, 
+* permitiendo al compilador de Scala optimizar la pila de memoria.
+
+## Llamados de pila en recursión de cola
+
+Ejemplo:
+### Paso 1: Llamado inicial
+```Scala
+cesarCola("hola", 3) // se asigna "" por defecto
+```
+Tambien podria ser  `cesarCola("casa", 3, "")`
+
+### Paso 2: Primera iteración
+```Scala
+cesarCola("asa", 3, "f") // c = 'c' -> 'f' | acc = "" + "f"
+```
+### Paso 3: segunda iteración
+```Scala
+cesarCola("sa", 3, "fd") // c = 'a' -> 'd' | acc = "f" + "d"
+```
+
+### Paso 4: tercera iteración
+```Scala
+cesarCola("a", 3, "fdv") // c = 's' -> 'v' | acc = "fd" + "v"
+```
+
+### Paso 5: cuarta iteración
+```Scala
+cesarCola("", 3, "fdvd") // c = 'a' -> 'd' | acc = "fdv" + "d"
+```
+
+### Paso 6: quinta iteración
+
+```Scala
+return "fdvd" // m.isEmpty es verdadero, retorna acc
+```
+
+## Ejemplo de uso
+
+```Scala
+val mensajeCifrado = cesarCola("casa", 3)
+println(mensajeCifrado) // "fdvd"
+```
+
+## Diferencia con recursión normal
+El lineal necesita volver sobre sus pasos para construir el String final;
+el de cola construye el String mientras avanza y no necesita regresar.
+
+
+## Diagrama de llamados de pila con recursión de cola
+
+```mermaid
+
+sequenceDiagram
+    participant Main as cesarCola("casa", 3)
+    participant L1 as cesarCola("casa", 3, "")
+    participant L2 as cesarCola("asa", 3, "f")
+    participant L3 as cesarCola("sa", 3, "fd")
+    participant L4 as cesarCola("a", 3, "fdv")
+    participant L5 as cesarCola("", 3, "fdvd")
+
+    Main->>L1: llamada inicial (asigna acc = "")
+    L1->>L2: tail call con ("asa", 3, "f")
+    L2->>L3: tail call con ("sa", 3, "fd")
+    L3->>L4: tail call con ("a", 3, "fdv")
+    L4->>L5: tail call con ("", 3, "fdvd")
+    L5-->>Main: return "fdvd"
+```
