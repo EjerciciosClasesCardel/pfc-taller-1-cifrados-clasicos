@@ -1,131 +1,136 @@
-# Algoritmo Factorial con Recursión de Cola
+# Informe de Proceso: Cifrado César (Recursión Lineal vs. Recursión de Cola)
 
-## Definición del Algoritmo
+Fundamentos de Programación Funcional y Concurrente  
+Escuela de Ingeniería de Sistemas y Computación, Universidad del Valle  
 
-```Scala
-def factorial(n: Int): BigInt = {
-  @annotation.tailrec
-  def loop(x: Int, acumulador: BigInt): BigInt = {
-    if (x <= 1) acumulador
-    else loop(x - 1, acumulador * x)
+---
+
+## 1. Definición de los Algoritmos
+
+El cifrado César desplaza cada letra minúscula $k$ posiciones en módulo 26, copiando los demás caracteres sin cambios.
+
+### 1.1. César con Recursión Lineal (`cesar`)
+
+```scala
+def cifrarChar(c: Char, k: Int): Char = {
+  if (esMinuscula(c)) {
+    val nuevaPosicion = Math.floorMod(c - 'a' + k, 26)
+    ('a' + nuevaPosicion).toChar
+  } else {
+    c
   }
-  loop(n, 1)
+}
+
+def cesar(m: Mensaje, k: Int): Mensaje = {
+  if (m.isEmpty) {
+    ""
+  } else {
+    cifrarChar(m.head, k).toString + cesar(m.tail, k)
+  }
 }
 ```
 
-* La función `factorial` calcula el factorial de un número `n` utilizando **recursión de cola**.
-* La función interna `loop` es la que hace la recursión:
+* Cada llamada procesa `m.head` y deja la concatenación `+` **pendiente en la pila** esperando el resultado de `cesar(m.tail, k)`.
+* Genera un marco de pila por cada letra ($O(n)$ en memoria).
 
-  * Recibe dos parámetros:
+### 1.2. César con Recursión de Cola (`cesarCola`)
 
-    * `x`: el valor actual decreciente hasta llegar a 1.
-    * `acumulador`: donde se guarda el resultado parcial en cada paso.
-* El decorador `@annotation.tailrec` obliga a que la función sea optimizada como recursión de cola, es decir, **no se acumulan llamados en la pila**.
-
-## Explicación paso a paso
-
-### Caso base
-
-```Scala
-if (x <= 1) acumulador
+```scala
+@annotation.tailrec
+final def cesarCola(m: Mensaje, k: Int, acc: Mensaje = ""): Mensaje = {
+  if (m.isEmpty) acc
+  else {
+    cesarCola(m.tail, k, acc + cifrarChar(m.head, k))
+  }
+}
 ```
 
-Cuando `x` llega a `1`, la función retorna directamente el valor acumulado, evitando más llamadas.
-
-### Caso recursivo
-
-```Scala
-loop(x - 1, acumulador * x)
-```
-
-En cada llamada:
-
-* Se reduce el valor de `x` en 1.
-* Se multiplica el acumulador por `x` y se pasa a la siguiente iteración.
-* Como es recursión de cola, la llamada recursiva es la **última instrucción** en ejecutarse, lo que permite a Scala optimizar la pila.
+* El resultado se construye de izquierda a derecha en el acumulador `acc`.
+* La llamada recursiva es la última instrucción (*posición de cola*). Con `@tailrec`, Scala reutiliza el mismo marco de pila ($O(1)$ en memoria).
 
 ---
 
-## Llamados de pila en recursión de cola
+## 2. Traza de `cesar("casa", 3)` (Recursión Lineal)
 
-Ejemplo:
+Para el mensaje `"casa"` con clave $k = 3$:
 
-```Scala
-factorial(5)
-```
+### 2.1. Crecimiento de la Pila (Apilado de Llamadas)
 
-### Paso 1: Llamada inicial
+Capturas del depurador mostrando los marcos acumulados (*frames*) y la reducción de $m$:
 
-```Scala
-loop(5, 1)
-```
+1. **Llamada 1:** `cesar("casa", 3)` $\to$ Cifra `'c'` a `'f'`. Queda pendiente `'f' +: cesar("asa", 3)` (1 marco).  
+   ![Llamada 1](img.png)
 
-### Paso 2: Primera iteración
+2. **Llamada 2:** `cesar("asa", 3)` $\to$ Cifra `'a'` a `'d'`. Queda pendiente `'d' +: cesar("sa", 3)` (2 marcos).  
+   ![Llamada 2](img_1.png)
 
-```Scala
-loop(4, 5)   // acumulador = 1 * 5
-```
+3. **Llamada 3:** `cesar("sa", 3)` $\to$ Cifra `'s'` a `'v'`. Queda pendiente `'v' +: cesar("a", 3)` (3 marcos).  
+   ![Llamada 3](img_2.png)
 
-### Paso 3: Segunda iteración
+4. **Llamada 4:** `cesar("a", 3)` $\to$ Cifra `'a'` a `'d'`. Queda pendiente `'d' +: cesar("", 3)` (4 marcos).  
+   ![Llamada 4](img_3.png)
 
-```Scala
-loop(3, 20)  // acumulador = 5 * 4
-```
+5. **Caso base:** `cesar("", 3)` $\to$ Condición `m.isEmpty` es `true`, retorna `""` (máximo de 5 marcos).  
+   > **Nota sobre el Caso Base:** En el depurador no se genera una quinta pausa porque el *breakpoint* está en la línea del `else`. Al llegar `m = ""`, entra directo al bloque `if` y retorna `""` sin volver a pausar, iniciando el retorno de la pila.
 
-### Paso 4: Tercera iteración
+### 2.2. Reducción de la Pila (Resolución de Pendientes)
 
-```Scala
-loop(2, 60)  // acumulador = 20 * 3
-```
+Al alcanzar el caso base, las operaciones pendientes se resuelven en orden inverso:
+`""` $\to$ `'d' + ""` = `"d"` $\to$ `'v' + "d"` = `"vd"` $\to$ `'d' + "vd"` = `"dvd"` $\to$ `'f' + "dvd"` = `"fdvd"`.
 
-### Paso 5: Cuarta iteración
-
-```Scala
-loop(1, 120) // acumulador = 60 * 2
-```
-
-### Paso 6: Caso base
-
-```Scala
-return 120
-```
-
----
-
-## Diferencia con recursión normal
-
-* En **recursión normal** cada llamada queda en la pila esperando a que termine la siguiente, lo que puede causar desbordamiento si `n` es muy grande.
-* En **recursión de cola**, el compilador transforma el proceso en un **bucle optimizado**, por lo que no se guarda cada llamada en la pila y el algoritmo puede ejecutarse para valores muy grandes sin problema.
-
----
-
-## Ejemplo de uso
-
-```Scala
-val resultado = factorial(5)
-println(resultado)  // 120
-```
-
-El resultado de `factorial(5)` es `120`.
-
-
-## Diagrama de llamados de pila con recursión de cola
+### 2.3. Diagrama de Secuencia: Pila Lineal
 
 ```mermaid
 sequenceDiagram
-    participant Main as factorial(5)
-    participant L1 as loop(5, 1)
-    participant L2 as loop(4, 5)
-    participant L3 as loop(3, 20)
-    participant L4 as loop(2, 60)
-    participant L5 as loop(1, 120)
+    participant Main as cesar("casa", 3)
+    participant C1 as cesar("asa", 3)
+    participant C2 as cesar("sa", 3)
+    participant C3 as cesar("a", 3)
+    participant C4 as cesar("", 3)
 
-    Main->>L1: llamada inicial
-    L1->>L2: tail call con (4, 5)
-    L2->>L3: tail call con (3, 20)
-    L3->>L4: tail call con (2, 60)
-    L4->>L5: tail call con (1, 120)
-    L5-->>Main: return 120
+    Main->>C1: llamada (pendiente: 'f' + ...)
+    C1->>C2: llamada (pendiente: 'd' + ...)
+    C2->>C3: llamada (pendiente: 'v' + ...)
+    C3->>C4: llamada (pendiente: 'd' + ...)
+    Note over C4: Caso base: m.isEmpty == true
+    C4-->>C3: retorna ""
+    Note over C3: Resuelve: 'd' + "" -> "d"
+    C3-->>C2: retorna "d"
+    Note over C2: Resuelve: 'v' + "d" -> "vd"
+    C2-->>C1: retorna "vd"
+    Note over C1: Resuelve: 'd' + "vd" -> "dvd"
+    C1-->>Main: retorna "dvd"
+    Note over Main: Resuelve: 'f' + "dvd" -> "fdvd"
 ```
 
+---
 
+## 3. Traza de `cesarCola("casa", 3, "")` (Recursión de Cola)
+
+### 3.1. Evolución del Acumulador
+
+En cada iteración el acumulador `acc` recibe la letra cifrada y no quedan operaciones pendientes:
+
+* **Paso 0:** `cesarCola("casa", 3, "")` $\to$ Cifra `'c'`, nuevo acumulador `acc = "f"`.
+* **Paso 1:** `cesarCola("asa", 3, "f")` $\to$ Cifra `'a'`, nuevo acumulador `acc = "fd"`.
+* **Paso 2:** `cesarCola("sa", 3, "fd")` $\to$ Cifra `'s'`, nuevo acumulador `acc = "fdv"`.
+* **Paso 3:** `cesarCola("a", 3, "fdv")` $\to$ Cifra `'a'`, nuevo acumulador `acc = "fdvd"`.
+* **Paso 4 (Caso base):** `cesarCola("", 3, "fdvd")` $\to$ `m.isEmpty` es `true`, retorna `acc = "fdvd"` directamente.
+
+### 3.2. Diagrama de Secuencia: Pila de Cola
+
+```mermaid
+sequenceDiagram
+    participant Main as cesarCola("casa", 3, "")
+    participant C1 as cesarCola("asa", 3, "f")
+    participant C2 as cesarCola("sa", 3, "fd")
+    participant C3 as cesarCola("a", 3, "fdv")
+    participant C4 as cesarCola("", 3, "fdvd")
+
+    Main->>C1: tail call con acc = "f"
+    C1->>C2: tail call con acc = "fd"
+    C2->>C3: tail call con acc = "fdv"
+    C3->>C4: tail call con acc = "fdvd"
+    Note over C4: Caso base: m.isEmpty == true
+    C4-->>Main: retorna "fdvd" directamente
+```
