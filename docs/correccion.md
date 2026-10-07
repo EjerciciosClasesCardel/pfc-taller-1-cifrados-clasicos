@@ -1,134 +1,59 @@
 # Informe de Corrección: Cifrados Clásicos con Recursión
 
 Fundamentos de Programación Funcional y Concurrente  
-Escuela de Ingeniería de Sistemas y Computación, Universidad del Valle  
+
 
 ---
 
-## Punto 1: Cifrado César Lineal (`cesar`)
+## Punto 1: Cifrado César Lineal (`cesar`) — Inducción Estructural
 
-Demostramos la corrección de la función `cesar` mediante **inducción estructural** sobre cadenas de texto (considerando una cadena como una lista de caracteres donde un mensaje es la cadena vacía `""` o una cabeza seguida de una cola `c +: resto`).
+Demostramos que `cesar(m, k)` cifra correctamente cualquier mensaje $m$ mediante inducción estructural sobre cadenas:
 
-### Código analizado
-```scala
-def cesar(m: Mensaje, k: Int): Mensaje = {
-  if (m.isEmpty) {
-    ""
-  } else {
-    cifrarChar(m.head, k).toString + cesar(m.tail, k)
-  }
-}
-```
+* **Caso base:** Si la cadena es vacía `""`, la condición `if (m.isEmpty)` retorna `""` inmediatamente. Esto es correcto porque un mensaje vacío no tiene caracteres para cifrar.
+* **Hipótesis de inducción (HI):** Asumimos que para la cola del mensaje (`m.tail`) la función ya opera correctamente y devuelve todas sus letras cifradas con la clave $k$.
+* **Paso inductivo:** Para un mensaje completo `m.head +: m.tail`, el código ejecuta:
+  $$\text{cifrarChar}(m.\text{head}, k) + \text{cesar}(m.\text{tail}, k)$$
+  Como `cifrarChar` cifra correctamente el primer carácter y por hipótesis `cesar(m.tail, k)` ya tiene cifrado todo el resto, al concatenar ambos resultados obtenemos el mensaje completo cifrado correctamente.
 
-### Especificación
-Sea $f(m, k)$ el resultado esperado de aplicar el cifrado César a un mensaje $m$ con desplazamiento $k$. Queremos demostrar que para cualquier mensaje $m$ y clave $k$:
-$$\text{cesar}(m, k) == f(m, k)$$
-
-### 1. Caso base ($m = ""$)
-* Si pasamos una cadena vacía, la condición `m.isEmpty` se cumple de inmediato y el código retorna `""`.
-* Por especificación, cifrar un mensaje sin letras debe dar un mensaje vacío: $f("", k) = ""$.
-* Por lo tanto:
-  $$\text{cesar}("", k) == f("", k)$$
-  El caso base se cumple.
-
-### 2. Hipótesis de Inducción (HI)
-Asumimos que para la cola del mensaje (`m.tail`, que es una cadena de menor longitud) la función ya opera correctamente:
-$$\text{cesar}(m.\text{tail}, k) == f(m.\text{tail}, k)$$
-
-### 3. Paso inductivo ($m = c +: s$)
-Analizamos una cadena completa formada por un primer carácter $c$ (`m.head`) y el resto de la cadena $s$ (`m.tail`).
-
-Siguiendo el código en la rama del `else`:
-$$\text{cesar}(c +: s, k) \to \text{cifrarChar}(c, k) + \text{cesar}(s, k)$$
-
-Por la Hipótesis de Inducción, reemplazamos la llamada recursiva por su especificación:
-$$\to \text{cifrarChar}(c, k) + f(s, k)$$
-
-Por la definición del cifrado César, cifrar un mensaje completo consiste en cifrar su primera letra y pegarla al cifrado del resto:
-$$\text{cifrarChar}(c, k) + f(s, k) = f(c +: s, k)$$
-
-Por lo tanto:
-$$\text{cesar}(c +: s, k) == f(c +: s, k)$$
-
-**Conclusión:** Por inducción estructural, la función `cesar(m, k)` siempre produce el resultado esperado para cualquier mensaje.
+Por lo tanto, la función es correcta para cualquier mensaje por inducción estructural.
 
 ---
 
-## Punto 2: Cifrado César con Recursión de Cola (`cesarCola`)
+## Punto 2: Cifrado César de Cola (`cesarCola`) — Proceso Iterativo con Acumulador
 
-Como `cesarCola` es una función con acumulador que representa un proceso iterativo, argumentamos su corrección formalizando su estado, su invariante y su terminación.
+Argumentamos la corrección de `cesarCola` formalizando su proceso iterativo:
 
-### Código analizado
-```scala
-@annotation.tailrec
-final def cesarCola(m: Mensaje, k: Int, acc: Mensaje = ""): Mensaje = {
-  if (m.isEmpty) acc
-  else {
-    cesarCola(m.tail, k, acc + cifrarChar(m.head, k))
-  }
-}
-```
+* **Estado:** $(m, acc)$, donde $m$ es el mensaje que falta por procesar y $acc$ es el texto que ya acumulamos en la maleta.
+* **Estado inicial:** $(m_0, "")$, arrancando con el mensaje original y el acumulador vacío.
+* **Estado final:** $("", acc_f)$, cuando no quedan caracteres por procesar (`m.isEmpty == true`).
+* **Respuesta:** En el estado final retorna el acumulador: $\text{respuesta}(("", acc_f)) = acc_f$.
 
-### 1. Formalización del proceso iterativo
+### Invariante
+En todo momento de la ejecución se cumple:
+$$acc + \text{cifrar}(m, k) == \text{cifrar}(m_0, k)$$
 
-* **Estado ($s$):** Representado por la tupla $(m, acc)$, donde $m$ es el mensaje pendiente por procesar y $acc$ es el texto cifrado acumulado hasta el momento.
-* **Estado inicial ($s_0$):** $(m_0, "")$, donde $m_0$ es el mensaje original completo y el acumulador arranca vacío por defecto.
-* **Estado final ($s_f$):** Se reconoce cuando el mensaje restante está vacío, es decir, cuando $m = ""$ (`m.isEmpty == true`). El estado final es $("", acc_f)$.
-* **Respuesta del algoritmo:** Cuando se llega al estado final, la función retorna directamente el acumulador: $\text{respuesta}(("", acc_f)) = acc_f$.
-* **Transformación de estado:** En cada paso recursivo se pasa al siguiente estado:
-  $$\text{transformar}((m, acc)) = (m.\text{tail}, acc + \text{cifrarChar}(m.\text{head}, k))$$
+> **En palabras sencillas:** Lo que ya llevo en el acumulador $acc$ más lo que me falta por cifrar del mensaje $m$, siempre equivale al mensaje final esperado.
 
-### 2. Invariante de ciclo ($\text{Inv}$)
-
-La condición que siempre se mantiene verdadera a lo largo de toda la ejecución es:
-$$\text{Inv}(m, acc) \equiv acc + f(m, k) == f(m_0, k)$$
-
-> **En palabras sencillas:** Lo que ya llevamos acumulado en la maleta $acc$ más lo que falta por cifrar del mensaje $m$, siempre equivale al resultado final esperado del mensaje original completo $m_0$.
-
-### 3. Demostración de los 4 pasos de corrección
-
-#### Paso 1: El estado inicial cumple el invariante ($\text{Inv}(s_0)$)
-En el estado inicial $s_0 = (m_0, "")$:
-$$acc + f(m, k) = "" + f(m_0, k) = f(m_0, k)$$
-El invariante se cumple al inicio.
-
-#### Paso 2: El invariante se mantiene en cada paso
-Supongamos que estamos en un paso donde el mensaje no está vacío ($m = c +: s$) y se cumple el invariante:
-$$acc + f(c +: s, k) = f(m_0, k)$$
-
-Por definición de cifrado: $f(c +: s, k) = \text{cifrarChar}(c, k) + f(s, k)$. Sustituyendo:
-$$acc + \text{cifrarChar}(c, k) + f(s, k) = f(m_0, k)$$
-
-Al agrupar el nuevo acumulador $acc' = acc + \text{cifrarChar}(c, k)$ y el nuevo mensaje restante $m' = s$:
-$$acc' + f(m', k) = f(m_0, k)$$
-
-Esto demuestra que el nuevo estado $(m', acc')$ sigue cumpliendo el invariante.
-
-#### Paso 3: El estado final da la respuesta correcta
-Al llegar al estado final $s_f = ("", acc_f)$:
-$$acc_f + f("", k) = f(m_0, k)$$
-Como $f("", k) = ""$:
-$$acc_f + "" = acc_f = f(m_0, k)$$
-
-Como el programa retorna $acc_f$, la respuesta obtenida coincide exactamente con la especificación esperada $f(m_0, k)$.
-
-#### Paso 4: Terminación
-En cada iteración tomamos `m.tail`, por lo que la longitud del mensaje se reduce estrictamente en 1 ($|m.\text{tail}| = |m| - 1$). Como cualquier cadena de texto tiene una longitud finita, tras $|m_0|$ pasos el mensaje alcanzará obligatoriamente la cadena vacía `""`, garantizando que el algoritmo siempre termina y no entra en bucles infinitos.
+### Demostración:
+1. **Inicio:** Al comenzar, $acc$ es `""`, por lo que `"" + cifrar(m_0, k) == cifrar(m_0, k)`. El invariante se cumple.
+2. **Paso a paso (Preservación):** En cada llamada recursiva hacemos `cesarCola(m.tail, k, acc + cifrarChar(m.head, k))`. La letra que quitamos de la cabeza de $m$ pasa cifrada al acumulador $acc$, por lo que la suma total de lo acumulado más lo pendiente se mantiene intacta.
+3. **Final:** Al llegar al caso base ($m = ""$), se tiene $acc + "" = acc$. Por el invariante, ese valor acumulado $acc$ es exactamente el mensaje completo cifrado.
+4. **Terminación:** En cada iteración procesamos `m.tail`, reduciendo la longitud de $m$ en 1 carácter. Como el mensaje tiene una longitud finita, obligatoriamente llegará a `""` tras un número finito de pasos, garantizando que el programa siempre termina.
 
 ---
 
 ## Punto 3: Frecuencias (`frecuencias`)
 
-*(Sección correspondiente al integrante del equipo a cargo del Punto 3).*
+*(A cargo del integrante del equipo responsable del Punto 3).*
 
 ---
 
 ## Punto 4: Romper César (`desplazamientoProbable` y `romperCesar`)
 
-*(Sección correspondiente al integrante del equipo a cargo del Punto 4).*
+*(A cargo del integrante del equipo responsable del Punto 4).*
 
 ---
 
 ## Punto 5: Combinaciones y Cifrado Vigenère (`combinaciones` y `vigenere`)
 
-*(Sección correspondiente al integrante del equipo a cargo del Punto 5).*
+*(A cargo del integrante del equipo responsable del Punto 5).*
