@@ -24,22 +24,9 @@ class CifradosClasicos {
   // Punto 1 -------------------------------------------------------------------
 
   /** César con recursión lineal: una operación pendiente por letra. */
-   def cifrarChar(c: Char, k: Int): Char = {
-    if (esMinuscula(c)) {
-      val nuevaPosicion = Math.floorMod(c - 'a' + k, 26)
-      ('a' + nuevaPosicion).toChar
-    } else {
-      c
-    }
-  }
+   def cifrarChar(c: Char, k: Int): Char = ???
   /** César con recursión lineal: una operación pendiente por letra. */
-  def cesar(m: Mensaje, k: Int): Mensaje = {
-    if (m.isEmpty) {
-      ""
-    } else {
-      cifrarChar(m.head, k).toString + cesar(m.tail, k)
-    }
-  }
+  def cesar(m: Mensaje, k: Int): Mensaje = ???
 
   // Punto 2 -------------------------------------------------------------------
 
@@ -56,16 +43,7 @@ class CifradosClasicos {
    * Cuenta las letras minúsculas del mensaje, de mayor a menor frecuencia y,
    * en empate, en orden alfabético. El recorrido es recursivo de cola.
    */
-  def frecuencias(m: Mensaje): Frecuencias = {
-    def contar(resto: List[Char], acc: Map[Char, Int]): Map[Char, Int] =
-      resto match {
-        case Nil => acc
-        case c :: cola if esMinuscula(c) =>
-          contar(cola, acc.updated(c, acc.getOrElse(c, 0)+1))
-        case _ :: cola => contar(cola, acc)
-      }
-    contar(m.toList, Map()).toList.sortBy {case (c, n) => (-n, c)}
-  }
+  def frecuencias(m: Mensaje): Frecuencias = ???
 
   // Punto 4 -------------------------------------------------------------------
 
