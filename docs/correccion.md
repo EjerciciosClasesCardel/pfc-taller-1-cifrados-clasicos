@@ -91,21 +91,21 @@ La función sigue recorriendo $Frecuencias$ si la letra $e$ está en el primer i
 
 ### Demostración
 
-**1.** $\operatorname{Inv}(s_0)$: el estado inicial cumple la condición invariante.
+**1.** $\text{Inv}(s_0)$: el estado inicial cumple la condición invariante.
 
-$s_0 = \operatorname{frecuencias}(m)$
+$s_0 = \text{frecuencias}(m)$
 
 Por lo tanto, la invariante se cumple.
 
 **2.** Si la lista está vacía, se devuelve '0'. Caso contrario:
 
-$(s_i \neq s_f \land \operatorname{Inv}(s_i)) \rightarrow \operatorname{Inv}(\operatorname{transformar}(s_i))$
+$(s_i \neq s_f \land \text{Inv}(s_i)) \rightarrow \text{Inv}(\text{transformar}(s_i))$
 
 Si la primera letra es diferente de 'e', el proceso termina y devuelve esa letra. En ese caso, getFrequentChar descarta x y continúa con xs. Como el elemento descartado es 'e', el invariante sigue cumpliéndose:
 
 $Inv(s_i) \Rightarrow Inv(xs)$
 
-**3.** $\operatorname{Inv}(s_f) \rightarrow \operatorname{respuesta}(s_f) == f(a)$
+**3.** $\text{Inv}(s_f) \rightarrow \text{respuesta}(s_f) == f(a)$
 
 Si se encuentra una letra distinta a la 'e', getFrequentChar devuelve esa letra.
 
