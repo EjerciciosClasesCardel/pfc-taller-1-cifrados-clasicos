@@ -24,7 +24,22 @@ class CifradosClasicos {
   // Punto 1 -------------------------------------------------------------------
 
   /** César con recursión lineal: una operación pendiente por letra. */
-  def cesar(m: Mensaje, k: Int): Mensaje = ???
+   def cifrarChar(c: Char, k: Int): Char = {
+    if (esMinuscula(c)) {
+      val nuevaPosicion = Math.floorMod(c - 'a' + k, 26)
+      ('a' + nuevaPosicion).toChar
+    } else {
+      c
+    }
+  }
+  /** César con recursión lineal: una operación pendiente por letra. */
+  def cesar(m: Mensaje, k: Int): Mensaje = {
+    if (m.isEmpty) {
+      ""
+    } else {
+      cifrarChar(m.head, k).toString + cesar(m.tail, k)
+    }
+  }
 
   // Punto 2 -------------------------------------------------------------------
 
@@ -41,7 +56,16 @@ class CifradosClasicos {
    * Cuenta las letras minúsculas del mensaje, de mayor a menor frecuencia y,
    * en empate, en orden alfabético. El recorrido es recursivo de cola.
    */
-  def frecuencias(m: Mensaje): Frecuencias = ???
+  def frecuencias(m: Mensaje): Frecuencias = {
+    def contar(resto: List[Char], acc: Map[Char, Int]): Map[Char, Int] =
+      resto match {
+        case Nil => acc
+        case c :: cola if esMinuscula(c) =>
+          contar(cola, acc.updated(c, acc.getOrElse(c, 0)+1))
+        case _ :: cola => contar(cola, acc)
+      }
+    contar(m.toList, Map()).toList.sortBy {case (c, n) => (-n, c)}
+  }
 
   // Punto 4 -------------------------------------------------------------------
 
@@ -49,9 +73,26 @@ class CifradosClasicos {
    * Supone que la letra más frecuente del mensaje cifrado es la 'e' del
    * original y devuelve la distancia entre las dos. Sin letras, cero.
    */
-  def desplazamientoProbable(m: Mensaje): Int = ???
+  def desplazamientoProbable(m: Mensaje): Int = {
+    def getFrequentChar(frec: Frecuencias): Char = 
+    frec match {
+      case Nil => '0'
+      case x :: xs => if(x._1 == 'e') getFrequentChar(xs) else x._1
+    }
 
-  def romperCesar(m: Mensaje): Mensaje = ???
+    val frequentChar = getFrequentChar(frecuencias(m))
+
+    if (frequentChar == '0') 0
+    else {
+        if ('e' > frequentChar) (('e' - frequentChar) - letras) * -1
+        else ('e' - frequentChar) * -1
+    }
+
+  }
+
+  def romperCesar(m: Mensaje): Mensaje = {
+    cesar(m, -desplazamientoProbable(m))
+  }
 
   // Punto 5 -------------------------------------------------------------------
 
