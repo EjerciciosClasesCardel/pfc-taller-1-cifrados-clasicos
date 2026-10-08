@@ -17,7 +17,7 @@ la nota.
 | Nombre completo | Código |
 |---|---|
 |Jhon Kennedy Isaza Velez| 2559887 |
-|Emerson Erney Cuarán Lagos | 25599806 |
+|Emerson Erney Cuarán Lagos | 2559806 |
 | Juan Pablo Pillimue Hurtado | 2477332 |
 
 ## Cómo está organizado el proyecto
