@@ -152,4 +152,7 @@ class CifradosClasicosTest extends AnyFunSuite {
   test("vigenere: con una clave de una sola letra es un César") {
     assert(vigenere("hola mundo", "d") == cesar("hola mundo", 3))
   }
+
+
+
 }

@@ -73,38 +73,43 @@ class CifradosClasicos {
    * Cuenta las letras minúsculas del mensaje, de mayor a menor frecuencia y,
    * en empate, en orden alfabético. El recorrido es recursivo de cola.
    */
+
   def frecuencias(m: Mensaje): Frecuencias = {
+    def sumar(c: Char, l: Frecuencias): Frecuencias =
+      l match {
+        case Nil => List((c, 1))
+        case (letra, cuenta) :: resto =>
+          if (letra == c) (letra, cuenta + 1):: resto
+          else (letra, cuenta) ::sumar(c, resto)
+      }
     @tailrec
     def contar(i: Int, acc: Frecuencias): Frecuencias =
-      if (i >= m.length) {
-        acc
-      } else {
-        val c = m(i)
-        if (esMinuscula(c)) {
-          val antes = acc.find(par => par._1 == c).map(par => par._2).getOrElse(0)
-          val sinC = acc.filter(par => par._1 != c)
-          contar(i + 1, (c, antes + 1) :: sinC)
-        } else {
-          contar(i + 1, acc)
-        }
+      if (i >= m.length) acc
+      else if (esMinuscula(m(i))) contar(i + 1, sumar(m(i), acc))
+      else contar(i + 1, acc)
+
+    def vaAntes(letra1: Char, cuenta1: Int, letra2: Char, cuenta2: Int): Boolean =
+      cuenta1 > cuenta2 || (cuenta1 == cuenta2 && letra1 < letra2)
+
+    def insertar(c: Char, n: Int, l: Frecuencias): Frecuencias =
+      l match {
+        case Nil => List((c, n))
+        case (letra, cuenta) :: resto =>
+          if (vaAntes(c,n, letra, cuenta)) (c, n) :: l
+          else (letra, cuenta) :: insertar(c, n, resto)
       }
 
-    contar(0, Nil).sortBy(par => (-par._2, par._1))
+    def ordenar(l: Frecuencias):Frecuencias =
+      l match {
+        case Nil => Nil
+        case (letra, cuenta) :: resto => insertar(letra, cuenta, ordenar(resto))
+      }
+    ordenar(contar(0, Nil))
   }
 
-
-
-  // Punto 4 -------------------------------------------------------------------
-
-  /**
-   * Supone que la letra más frecuente del mensaje cifrado es la 'e' del
-   * original y devuelve la distancia entre las dos. Sin letras, cero.
-   */
   // Punto 4 ----------------------------------------------------------
 
   def desplazamientoProbable(m: Mensaje): Int = {
-
-    // Cuenta cuántas veces aparece la letra c en el mensaje.
     def cuentaLetra(c: Char): Int = {
       @tailrec
       def cuenta(i: Int, acc: Int): Int =
@@ -115,13 +120,11 @@ class CifradosClasicos {
       cuenta(0, 0)
     }
 
-    // Recorre las letras de la 'a' (k = 0) a la 'z' (k = 25) y guarda
-    // la mejor hasta el momento: su posición y cuántas veces aparece.
     @tailrec
     def buscar(k: Int, kMejor: Int, cantMejor: Int): Int =
       if (k > 25) {
-        if (cantMejor == 0) 0              // no había letras
-        else (kMejor - 4 + 26) % 26        // la 'e' es la letra número 4
+        if (cantMejor == 0) 0
+        else (kMejor - 4 + 26) % 26
       }
       else {
         val n = cuentaLetra(('a' + k).toChar)
