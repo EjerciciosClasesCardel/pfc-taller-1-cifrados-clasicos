@@ -170,3 +170,4 @@ sale directamente del caso base.
 
 Esta diferencia es la que comprueba el test `"cesarCola: aguanta un mensaje
 largo sin desbordar la pila"`, con un mensaje de 200 000 letras.
+
