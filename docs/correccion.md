@@ -278,73 +278,226 @@ $k$ iteraciones, $l = \text{List}()$.
 
 Esto implica que $P_f(L) == \text{maxAux}(L.\text{head}, L.\text{tail}) == f(L)$
 
+---------------------------
+## A partir de acá, se hace el desarrollo del taller, lo anterior es el ejemplo que puso Cardel
 
-## 3. Punto 3: `frecuencias` (iterativa)
+## Punto 3:
 
-**Especificación.** Sea $\text{cuenta}(c, m) = |\{\, j < |m| : m_j = c \,\}|$.
-Entonces $\text{Frec}(m)$ es la lista de los pares $(c, \text{cuenta}(c, m))$
-para las letras $c$ con $\text{cuenta}(c, m) > 0$, **ordenada** de modo que $(c, x)$
-va antes que $(c', x')$ si $x > x'$, o si $x = x'$ y $c < c'$.
+Aquí queremos convencernos, con argumentos matemáticos y no solo con pruebas, de que `frecuencias` siempre devuelve lo que el enunciado pide. Primero dejamos clara la especificación, y luego miramos cada pedazo del programa con la herramienta que le corresponde: inducción estructural para las funciones recursivas sobre listas (`sumar`, `insertar` y `ordenar`) y estado, invariante y transformación para el recorrido del mensaje (`contar`).
+
+## 0. Qué debe hacer frecuencias
+
+Sea $m$ un mensaje de longitud $n$, con caracteres $m_0, m_1, \ldots, m_{n-1}$. Para una letra minúscula $c$, definimos cuántas veces aparece:
+
+```math
+\text{cuenta}(c, m) = |\{\, j < n : m_j = c \,\}|
+```
+
+Y llamamos $\text{Frec}(m)$ a la lista de pares $(c, \text{cuenta}(c, m))$, uno por cada letra $c$ que aparezca al menos una vez en $m$, ordenada así: el par $(c, x)$ va antes que el par $(c', x')$ cuando $x > x'$, o cuando $x = x'$ y $c < c'$.
+
+Lo que vamos a demostrar es que, para todo mensaje $m$:
+
+```math
+\text{frecuencias}(m) == \text{Frec}(m)
+```
+
+Por comodidad, vamos a usar dos palabras. Decimos que una lista de pares es sin repetidas si no hay dos pares con la misma letra, y escribimos $\text{conj}(l)$ para el conjunto de pares de una lista $l$ (sin importar el orden).
+
+El código que se realizó es el siguiente:
 
 ```scala
-// Fragmento abreviado: ver CifradosClasicos.scala para el código completo.
 def frecuencias(m: Mensaje): Frecuencias = {
+
+  // Le suma 1 a la cuenta de la letra c; si c no estaba, la agrega con 1.
+  def sumar(c: Char, l: Frecuencias): Frecuencias =
+    l match {
+      case Nil => List((c, 1))
+      case (letra, cuenta) :: resto =>
+        if (letra == c) (letra, cuenta + 1) :: resto
+        else (letra, cuenta) :: sumar(c, resto)
+    }
+
+  // Cuenta las letras de m a partir de la posición i, con lo contado hasta ahí en acc.
   @tailrec
   def contar(i: Int, acc: Frecuencias): Frecuencias =
     if (i >= m.length) acc
-    else if (esMinuscula(m(i)))
-      contar(i + 1, (m(i), antes + 1) :: acc.filter(par => par._1 != m(i)))
+    else if (esMinuscula(m(i))) contar(i + 1, sumar(m(i), acc))
     else contar(i + 1, acc)
 
-  contar(0, Nil).sortBy(par => (-par._2, par._1))
+  // Un par va antes que otro si tiene más cuenta, o igual cuenta y letra menor.
+  def vaAntes(letra1: Char, cuenta1: Int, letra2: Char, cuenta2: Int): Boolean =
+    cuenta1 > cuenta2 || (cuenta1 == cuenta2 && letra1 < letra2)
+
+  // Mete el par (c, n) en la lista ya ordenada, en el lugar que le toca.
+  def insertar(c: Char, n: Int, l: Frecuencias): Frecuencias =
+    l match {
+      case Nil => List((c, n))
+      case (letra, cuenta) :: resto =>
+        if (vaAntes(c, n, letra, cuenta)) (c, n) :: l
+        else (letra, cuenta) :: insertar(c, n, resto)
+    }
+
+  // Ordena la lista insertando uno por uno sus elementos.
+  def ordenar(l: Frecuencias): Frecuencias =
+    l match {
+      case Nil => Nil
+      case (letra, cuenta) :: resto => insertar(letra, cuenta, ordenar(resto))
+    }
+
+  ordenar(contar(0, Nil))
 }
 ```
 
-(`antes` es la cuenta que `acc` ya tenía de `m(i)`, o 0 si no aparecía).
+## 1. Corrección de las funciones recursivas sobre listas
 
-El proceso iterativo de `contar`:
+Las tres funciones de esta parte trabajan sobre listas de pares, y las listas se definen recursivamente: o son `Nil`, o son un par seguido de otra lista. Eso nos deja usar inducción estructural: se prueba para `Nil`, y luego se supone que la propiedad vale para la cola `r` (hipótesis de inducción, HI) y se prueba para `x :: r`.
 
-- Un estado $s = (i, acc)$.
-- El estado inicial es $s_0 = (0, \text{Nil})$.
-- $(i, acc)$ es final si $i \geq n$.
-- La invariante es
+### 1.1 La función sumar
+
+Sea $f(c, l)$ la lista que resulta de aumentar en 1 la cuenta de la letra $c$ en $l$, o de agregar el par $(c, 1)$ si $c$ no aparecía. Vamos a demostrar que, si $l$ es sin repetidas, entonces $\text{sumar}(c, l)$ es sin repetidas y $\text{conj}(\text{sumar}(c, l)) = \text{conj}(f(c, l))$.
+
+Caso base: $l = \text{Nil}$.
 
 ```math
-\text{Inv}(i, acc) \equiv 0 \leq i \leq n \ \land\ \text{las letras de } acc \text{ son distintas} \ \land\ \text{conj}(acc) = \{\, (c, \text{cuenta}(c, m[..i))) : c \text{ letra},\ \text{cuenta}(c, m[..i)) > 0 \,\}
+\text{sumar}(c, \text{Nil}) \rightarrow \text{List}((c, 1))
 ```
 
-donde $\text{conj}(acc)$ es el conjunto de pares de la lista.
-- $\text{transformar}((i, acc)) = (i + 1, acc')$, con $acc' = acc$ si $m_i$ no es
-  letra, y si es la letra $c$,
-  $acc' = (c, \text{antes} + 1) :: acc''$, donde $acc''$ es $acc$ sin el par de la
-  letra $c$.
+Como $c$ no aparecía en $\text{Nil}$, $f(c, \text{Nil}) = \text{List}((c, 1))$. Además es una lista de un solo par, así que es sin repetidas. Entonces el caso base se cumple.
 
-**1.** $\text{Inv}(s_0)$: con $i = 0$ el prefijo es vacío y ninguna letra
-tiene cuenta positiva; $\text{conj}(\text{Nil}) = \emptyset$ y no hay letras
-repetidas.
+Caso de inducción: $l = (x, n) :: r$, con $l$ sin repetidas. Hay que demostrar que si la propiedad vale para $r$, también vale para $l$. Por la HI, $\text{sumar}(c, r)$ es sin repetidas y tiene los pares de $f(c, r)$. Con el modelo de sustitución hay dos posibilidades:
 
-**2.** La invariante se mantiene. Sea $i < n$ y $c = m_i$.
+Si $x = c$:
 
-- Si $c$ no es letra, ninguna cuenta cambia al pasar de $m[..i)$ a $m[..i+1)$ y
-  $acc' = acc$.
-- Si $c$ es letra, `antes` es $\text{cuenta}(c, m[..i))$ por la invariante (o 0 si
-  $c$ no aparece en $acc$, que coincide con que su cuenta es 0). El par
-  nuevo $(c, \text{antes} + 1)$ es la cuenta de $c$ en $m[..i+1)$. El `filter`
-  quita el par viejo de $c$, y las demás letras conservan su cuenta, que no
-  cambió. Como el par viejo se quitó, $c$ aparece una sola vez: las letras
-  siguen siendo distintas.
+```math
+\text{sumar}(c, (x, n) :: r) \rightarrow \text{if } (x == c)\ (x, n+1) :: r \text{ else } \ldots \rightarrow (c, n+1) :: r
+```
 
-**3.** Cuando $i = n$ se cumple $m[..n) = m$, y por la invariante
-$\text{conj}(acc)$ es exactamente el conjunto de pares de $\text{Frec}(m)$,
-sin orden.
+La cuenta de $c$ subió de $n$ a $n + 1$ y el resto $r$ quedó igual, que es justo lo que hace $f$. Y como $l$ era sin repetidas, $c$ no aparece en $r$, así que la lista resultante también es sin repetidas.
 
-**4.** $i$ crece en 1 por paso y se detiene en $n$.
+Si $x \neq c$:
 
-**El orden.** `sortBy` reordena la lista por la clave $(-x, c)$, con $x$ la
-frecuencia. Las letras son distintas, así que las claves **nunca se repiten**:
-la clave define un orden total y el resultado es único. Ordenar por $-x$ pone la
-mayor frecuencia primero, y en empate manda la letra menor. Eso es exactamente
-el orden de $\text{Frec}$. Por tanto $\text{frecuencias}(m) == \text{Frec}(m)$. $\blacksquare$
+```math
+\text{sumar}(c, (x, n) :: r) \rightarrow (x, n) :: \text{sumar}(c, r)
+```
 
-La recursión de `contar` es de cola: la llamada recursiva es lo último que se
-hace en cada rama, y `@tailrec` lo verifica en compilación.
+Por la HI, $\text{sumar}(c, r)$ tiene los pares de $r$ con la cuenta de $c$ aumentada (o con $(c, 1)$ agregado). El par $(x, n)$ se queda como estaba, porque $x \neq c$, que es lo que hace $f$. Para ver que no quedan letras repetidas: $x$ no aparecía en $r$ (porque $l$ era sin repetidas), y lo único nuevo que puede aparecer en $\text{sumar}(c, r)$ es la letra $c$, que es distinta de $x$.
+
+Concluimos por inducción que, para toda lista $l$ sin repetidas, $\text{sumar}(c, l)$ es sin repetidas y tiene los pares de $f(c, l)$.
+
+### 1.2 Un orden para los pares
+
+Antes de hablar de `insertar` y `ordenar` hay que entender bien `vaAntes`. Cuando las letras de dos pares son distintas, decir que $\text{vaAntes}(p, q)$ es lo mismo que comparar las claves $(-\text{cuenta}, \text{letra})$ en orden lexicográfico: primero gana la cuenta más grande, y si empatan, la letra más pequeña. Eso es un orden total estricto sobre los pares de una lista sin repetidas: dados dos pares distintos, exactamente uno de los dos va antes que el otro, y la relación es transitiva.
+
+Decimos que una lista está ordenada si cada par va antes que el que le sigue.
+
+### 1.3 La función insertar
+
+Vamos a demostrar que, si $l$ es una lista ordenada y sin repetidas, y la letra de $p = (c, n)$ no está en $l$, entonces $\text{insertar}(c, n, l)$ es una lista ordenada y con los pares de $l$ más $p$.
+
+Caso base: $l = \text{Nil}$.
+
+```math
+\text{insertar}(c, n, \text{Nil}) \rightarrow \text{List}((c, n))
+```
+
+Es una lista de un solo par, que está ordenada, y tiene los pares de $\text{Nil}$ más $p$.
+
+Caso de inducción: $l = x :: r$, con $x = (\text{letra}, \text{cuenta})$. La HI dice que $\text{insertar}(c, n, r)$ está ordenada y tiene los pares de $r$ más $p$. Hay dos posibilidades:
+
+Si $\text{vaAntes}(p, x)$:
+
+```math
+\text{insertar}(c, n, x :: r) \rightarrow p :: (x :: r)
+```
+
+La lista queda ordenada porque $p$ va antes que $x$, y $x :: r$ ya estaba ordenada. Tiene los pares de $l$ más $p$.
+
+Si no se cumple $\text{vaAntes}(p, x)$:
+
+```math
+\text{insertar}(c, n, x :: r) \rightarrow x :: \text{insertar}(c, n, r)
+```
+
+Por la HI, $\text{insertar}(c, n, r)$ está ordenada y tiene los pares de $r$ más $p$. Falta ver que $x$ va antes que el primer elemento de esa lista. Ese primer elemento es $p$ o es la cabeza $y$ de $r$. Si es $y$, $x$ va antes que $y$ porque $x :: r$ estaba ordenada. Si es $p$, como no se cumple $\text{vaAntes}(p, x)$ y las letras son distintas, por ser un orden total tiene que cumplirse $\text{vaAntes}(x, p)$. En los dos casos la lista queda ordenada y tiene los pares de $l$ más $p$.
+
+Concluimos por inducción que $\text{insertar}$ cumple lo que dijimos.
+
+### 1.4 La función ordenar
+
+Vamos a demostrar que, si $l$ es sin repetidas, $\text{ordenar}(l)$ es una lista ordenada con exactamente los pares de $l$.
+
+Caso base: $l = \text{Nil}$.
+
+```math
+\text{ordenar}(\text{Nil}) \rightarrow \text{Nil}
+```
+
+La lista vacía está ordenada y tiene los mismos pares que $\text{Nil}$.
+
+Caso de inducción: $l = p :: r$, con $p = (\text{letra}, \text{cuenta})$. Por la HI, $\text{ordenar}(r)$ está ordenada y tiene los pares de $r$.
+
+```math
+\text{ordenar}(p :: r) \rightarrow \text{insertar}(\text{letra}, \text{cuenta}, \text{ordenar}(r))
+```
+
+Como $l$ es sin repetidas, la letra de $p$ no está en $r$, y entonces tampoco en $\text{ordenar}(r)$. Por lo que probamos en 1.3, el resultado está ordenado y tiene los pares de $r$ más $p$, que son justo los de $l$.
+
+Concluimos por inducción que $\text{ordenar}$ cumple lo que dijimos.
+
+## 2. Corrección del recorrido del mensaje: contar
+
+`contar` es un programa iterativo (recursión de cola), así que lo formalizamos como un proceso con estados. Recordemos que $m$ es el mensaje original y $n$ su longitud.
+
+Este programa implementa el siguiente proceso iterativo:
+
+* Un estado $s = (i, acc)$, donde $i$ es la posición del mensaje que falta por leer y $acc$ es la lista de cuentas que llevamos.
+* El estado inicial es $s_0 = (0, \text{Nil})$.
+* $(i, acc)$ es final si $i \geq n$.
+* La invariante de ciclo es:
+
+```math
+\text{Inv}(i, acc) \equiv 0 \leq i \leq n \ \land\ acc \text{ es sin repetidas} \ \land\ \text{conj}(acc) = \{\, (c, \text{cuenta}(c, m[..i))) : c \text{ letra},\ \text{cuenta}(c, m[..i)) > 0 \,\}
+```
+
+donde $m[..i)$ son los primeros $i$ caracteres de $m$. Dicho en palabras: en todo momento, $acc$ tiene la cuenta exacta de lo que ya se leyó.
+* $\text{transformar}((i, acc)) = (i + 1, acc')$, donde $acc' = acc$ si $m_i$ no es una letra, y $acc' = \text{sumar}(m_i, acc)$ si lo es.
+
+Ahora demostramos los puntos:
+
+1. $\text{Inv}(s_0)$: el estado inicial cumple la invariante.
+
+```math
+s_0 = (0, \text{Nil}) \implies 0 \leq 0 \leq n \ \land\ \text{Nil} \text{ es sin repetidas} \ \land\ \text{conj}(\text{Nil}) = \emptyset
+```
+
+Con $i = 0$ no se ha leído nada, así que ninguna letra tiene cuenta positiva y el conjunto de la derecha también es vacío.
+
+2. La invariante se mantiene: $(s_j \neq s_f \land \text{Inv}(s_j)) \rightarrow \text{Inv}(\text{transformar}(s_j))$. Sea $s_j = (i, acc)$ un estado que no es final, o sea $i < n$, y sea $c = m_i$.
+
+  1. Primer cambio, $i = i + 1$: sigue valiendo $0 \leq i + 1 \leq n$ porque $i < n$.
+  2. Segundo cambio, el acumulador. Si $c$ no es una letra, entre $m[..i)$ y $m[..i+1)$ no cambia ninguna cuenta de letras, y $acc' = acc$, así que la invariante se mantiene tal cual. Si $c$ es una letra, su cuenta en $m[..i+1)$ es una más que en $m[..i)$ y las de las demás letras no cambian. Eso es exactamente lo que hace $\text{sumar}(c, acc)$ según lo probado en 1.1, y además el resultado sigue siendo sin repetidas.
+  3. Como se ve en los dos cambios, la invariante se mantiene.
+
+3. $\text{Inv}(s_f) \rightarrow \text{respuesta}(s_f) == \text{Frec}(m)$ sin contar el orden. En un estado final $i \geq n$, y como la invariante dice $i \leq n$, tenemos $i = n$. Entonces $m[..n) = m$ y
+
+```math
+\text{conj}(acc) = \{\, (c, \text{cuenta}(c, m)) : c \text{ letra},\ \text{cuenta}(c, m) > 0 \,\}
+```
+
+que son exactamente los pares de $\text{Frec}(m)$, aunque todavía sin el orden pedido. La respuesta de `contar` es $acc$.
+
+4. En cada paso, la componente $i$ del estado aumenta en 1, acercándose a $n$. Después de $n$ iteraciones se alcanza $n$ y el proceso termina.
+
+Esto implica que $\text{contar}(0, \text{Nil})$ es una lista sin repetidas con los pares de $\text{Frec}(m)$.
+
+## 3. Juntando las piezas
+
+La función completa hace `ordenar(contar(0, Nil))`. Por lo que vimos en la sección 2, $\text{contar}(0, \text{Nil})$ es una lista sin repetidas con los pares de $\text{Frec}(m)$. Por lo que vimos en 1.4, `ordenar` la deja ordenada, con exactamente esos pares.
+
+Solo falta ver que ese orden es el que pide el enunciado. Como $\text{vaAntes}$ es un orden total estricto sobre pares con letras distintas, solo hay una manera de ordenar un conjunto de pares con ese criterio, y esa manera es la de $\text{Frec}(m)$. Por lo tanto:
+
+```math
+\text{frecuencias}(m) == \text{Frec}(m)
+```
+
+para todo mensaje $m$, incluyendo los casos extremos: si $m$ es vacío o no tiene letras, $\text{contar}$ devuelve $\text{Nil}$, `ordenar` devuelve $\text{Nil}$ y $\text{Frec}(m)$ también es la lista vacía.
