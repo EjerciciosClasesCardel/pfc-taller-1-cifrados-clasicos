@@ -102,5 +102,32 @@ class CifradosClasicos {
    * Vigenère: cada letra se corre según la letra de la clave que le toca. Lo
    * que no es letra minúscula se copia y no consume clave.
    */
-  def vigenere(m: Mensaje, clave: Clave): Mensaje = ???
+  def vigenere(m: Mensaje, clave: Clave): Mensaje = {
+
+    if (clave.isEmpty){
+      m
+    }else{
+      def cifrar(
+                  mensaje: List[Char],
+                  posicionClave: Int
+                ): String = {
+        mensaje match {
+          case Nil =>
+            ""
+          case c :: resto =>
+            if (c >= 'a' && c <='z'){
+              val k = clave(posicionClave % clave.length)
+              val desplazamiento = k - 'a'
+              val posicion = (c - 'a' + desplazamiento) %26
+              val nuevaLetra = ('a' + posicion).toChar
+
+              nuevaLetra + cifrar (resto, posicionClave + 1)
+            } else {
+              c + cifrar (resto, posicionClave)
+            }
+        }
+      }
+      cifrar(m.toList,0)
+    }
+  }
 }
