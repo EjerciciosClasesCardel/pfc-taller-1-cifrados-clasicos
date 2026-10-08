@@ -206,7 +206,7 @@ $$
 F(m)(l) = \big\lvert \{\, i : m_i = l \,\}\big\rvert .
 $$
 
-Un `Map[Char, Int]` $A$ representa la función $\llbracket A \rrbracket(l) = $ `A.getOrElse(l, 0)`. Sea $\delta_c$ la función que vale 1 en $c$ y 0 en las demás letras.
+Un `Map[Char, Int]` $A$ representa la función $[\![A]\!](l) = $ `A.getOrElse(l, 0)`. Sea $\delta_c$ la función que vale 1 en $c$ y 0 en las demás letras.
 
 El resultado esperado de `frecuencias(m)` es la lista de pares $(l, F(m)(l))$ con $F(m)(l) > 0$, ordenada por cantidad decreciente y, en empate, por letra creciente.
 
@@ -215,29 +215,29 @@ El resultado esperado de `frecuencias(m)` es la lista de pares $(l, F(m)(l))$ co
 **Afirmación.** Para todo mensaje $m$ y todo mapa $A$ cuyas claves sean letras:
 
 $$
-\llbracket \texttt{contar}(m, A) \rrbracket = \llbracket A \rrbracket + F(m) \quad \text{(suma punto a punto)}.
+[\![\texttt{contar}(m, A)]\!] = [\![A]\!] + F(m) \quad \text{(suma punto a punto)}.
 $$
 
 **Terminación.** La medida $\lvert m \rvert$ decrece en 1 por llamada.
 
 Se prueba por inducción sobre $n = \lvert m \rvert$, para todo $A$.
 
-**Base de inducción ($n=0$).** $m=\varepsilon$: devuelve $A$. Como $F(\varepsilon) = 0$, $\llbracket A \rrbracket = \llbracket A \rrbracket + F(\varepsilon)$.
+**Base de inducción ($n=0$).** $m=\varepsilon$: devuelve $A$. Como $F(\varepsilon) = 0$, $[\![A]\!] = [\![A]\!] + F(\varepsilon)$.
 
-**Hipótesis de inducción.** Para todo $r$ con $\lvert r \rvert = n$ y todo mapa $A'$: $\llbracket\texttt{contar}(r,A')\rrbracket = \llbracket A' \rrbracket + F(r)$.
+**Hipótesis de inducción.** Para todo $r$ con $\lvert r \rvert = n$ y todo mapa $A'$: $[\![\texttt{contar}(r,A')]\!] = [\![A']\!] + F(r)$.
 
 **Paso inductivo.** Sea $m = c\,r$. Observamos que $F(c\,r) = \delta_c + F(r)$ si $c \in \Sigma$, y $F(c\,r) = F(r)$ si $c \notin \Sigma$.
 
-- *Caso $c \in \Sigma$.* El programa llama a `contar(r, A')` con $A' = A + (c \mapsto \llbracket A \rrbracket(c)+1)$, es decir $\llbracket A' \rrbracket = \llbracket A \rrbracket + \delta_c$. Entonces
+- *Caso $c \in \Sigma$.* El programa llama a `contar(r, A')` con $A' = A + (c \mapsto [\![A]\!](c)+1)$, es decir $[\![A']\!] = [\![A]\!] + \delta_c$. Entonces
   $$
-  \llbracket\texttt{contar}(c\,r, A)\rrbracket = \llbracket A' \rrbracket + F(r) = \llbracket A \rrbracket + \delta_c + F(r) = \llbracket A \rrbracket + F(c\,r).
+  [\![\texttt{contar}(c\,r, A)]\!] = [\![A']\!] + F(r) = [\![A]\!] + \delta_c + F(r) = [\![A]\!] + F(c\,r).
   $$
 - *Caso $c \notin \Sigma$.* El programa llama a `contar(r, A)` sin cambios:
   $$
-  \llbracket\texttt{contar}(c\,r, A)\rrbracket = \llbracket A \rrbracket + F(r) = \llbracket A \rrbracket + F(c\,r).
+  [\![\texttt{contar}(c\,r, A)]\!] = [\![A]\!] + F(r) = [\![A]\!] + F(c\,r).
   $$
 
-Esto completa la inducción. Con $A = \varnothing$ (donde $\llbracket\varnothing\rrbracket = 0$) se obtiene $\llbracket\texttt{contar}(m,\varnothing)\rrbracket = F(m)$. Además, una letra solo entra al mapa cuando se le suma 1, así que las letras con $F(m)(l) = 0$ **no aparecen** como clave, y los caracteres fuera de $\Sigma$ nunca entran.
+Esto completa la inducción. Con $A = \varnothing$ (donde $[\![\varnothing]\!] = 0$) se obtiene $[\![\texttt{contar}(m,\varnothing)]\!] = F(m)$. Además, una letra solo entra al mapa cuando se le suma 1, así que las letras con $F(m)(l) = 0$ **no aparecen** como clave, y los caracteres fuera de $\Sigma$ nunca entran.
 
 ### 4.2 Corrección del ordenamiento
 

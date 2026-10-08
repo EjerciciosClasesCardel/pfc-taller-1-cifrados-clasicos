@@ -8,11 +8,11 @@ El enunciado completo, con los ejemplos de cada punto, la rúbrica y la ecuació
 
 ## Integrantes
 
-| Nombre completo                 | Código       |
-|---------------------------------|--------------|
+| Nombre completo                 | Código  |
+|---------------------------------|---------|
 | MARIA VALENTINA OSPINA ESPINOSA | 2559760 |
-| JOHN FREDDY HURTADO VALENCIA    | 2559863     |
-| KAREN DAYANA SEPUVELDA RENDON   | CÓDIGO 3     |
+| JOHN FREDDY HURTADO VALENCIA    | 2559863 |
+| KAREN DAYANA SEPUVELDA RENDON   | 2559773 |
 
 
 
