@@ -19,6 +19,7 @@ class CifradosClasicos {
   val letras = 26
   val primera = 'a'.toInt
 
+
   def esMinuscula(c: Char): Boolean = c >= 'a' && c <= 'z'
 
   // Punto 1 -------------------------------------------------------------------
@@ -32,6 +33,7 @@ class CifradosClasicos {
       if (esMinuscula(c)) {
         val posicion = c - 'a'
         val nuevaposicion = (posicion + k).toInt % 26
+
 
         val ajustada = if (nuevaposicion < 0) nuevaposicion + 26 else nuevaposicion
         val nuevaLetra = ('a' + ajustada).toChar
@@ -98,20 +100,38 @@ class CifradosClasicos {
    * Supone que la letra más frecuente del mensaje cifrado es la 'e' del
    * original y devuelve la distancia entre las dos. Sin letras, cero.
    */
+  // Punto 4 ----------------------------------------------------------
+
   def desplazamientoProbable(m: Mensaje): Int = {
-    val letras = m.filter(c => c >= 'a' && c <= 'z')
 
-    if (letras.isEmpty) 0
-    else {
-      // (letra, cantidad de apariciones)
-      val frecuencias = letras.groupBy(identity).map { case (c, s) => (c, s.length) }
+    // Cuenta cuántas veces aparece la letra c en el mensaje.
+    def cuentaLetra(c: Char): Int = {
+      @tailrec
+      def cuenta(i: Int, acc: Int): Int =
+        if (i >= m.length) acc
+        else if (m(i) == c) cuenta(i + 1, acc + 1)
+        else cuenta(i + 1, acc)
 
-      // Más frecuente; en empate, la primera alfabéticamente
-      val masFrecuente = frecuencias.minBy { case (c, n) => (-n, c) }._1
-
-      ((masFrecuente - 'e') + 26) % 26
+      cuenta(0, 0)
     }
+
+    // Recorre las letras de la 'a' (k = 0) a la 'z' (k = 25) y guarda
+    // la mejor hasta el momento: su posición y cuántas veces aparece.
+    @tailrec
+    def buscar(k: Int, kMejor: Int, cantMejor: Int): Int =
+      if (k > 25) {
+        if (cantMejor == 0) 0              // no había letras
+        else (kMejor - 4 + 26) % 26        // la 'e' es la letra número 4
+      }
+      else {
+        val n = cuentaLetra(('a' + k).toChar)
+        if (n > cantMejor) buscar(k + 1, k, n)
+        else buscar(k + 1, kMejor, cantMejor)
+      }
+
+    buscar(0, 0, 0)
   }
+
   def romperCesar(m: Mensaje): Mensaje =
     cesar(m, (26 - desplazamientoProbable(m)) % 26)
 
