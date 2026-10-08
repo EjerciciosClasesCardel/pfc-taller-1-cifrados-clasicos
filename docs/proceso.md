@@ -170,3 +170,53 @@ sale directamente del caso base.
 
 Esta diferencia es la que comprueba el test `"cesarCola: aguanta un mensaje
 largo sin desbordar la pila"`, con un mensaje de 200 000 letras.
+
+
+
+
+
+
+## Punto 5: Cifrado Vigenère
+
+### 1. Estado de la Pila de Llamados Paso a Paso
+
+La función `vigenere` utiliza una función auxiliar recursiva de cola llamada `vigenereHelper` para procesar el mensaje sin dejar operaciones pendientes.
+
+Para la ejecución de `vigenere("casa", "sol")`, con los desplazamientos de la clave `sol` ($s = 18$, $o = 14$, $l = 11$):
+
+```text
+vigenereHelper("casa", "sol", "")
+└── vigenereHelper("asa", "ols", "s")       // 'c' + 18 mod 26 -> 's'
+    └── vigenereHelper("sa", "lso", "sh")   // 'a' + 14 mod 26 -> 'h'
+        └── vigenereHelper("a", "sol", "shl") // 's' + 11 mod 26 -> 'l'
+            └── vigenereHelper("", "ols", "shls") // 'a' + 18 mod 26 -> 's'
+                └── "shls" [Caso base alcanzado]
+```
+
+### 2. Diagrama de Secuencia de la Pila (Mermaid)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Usuario
+    participant V as vigenere("casa", "sol")
+    participant H as vigenereHelper
+
+    Usuario->>V: Iniciar cifrado
+    V->>H: vigenereHelper("casa", "sol", "")
+    Note over H: 'c' + 's' -> 's' | Clave rota a "ols"
+    H->>H: vigenereHelper("asa", "ols", "s")
+    Note over H: 'a' + 'o' -> 'h' | Clave rota a "lso"
+    H->>H: vigenereHelper("sa", "lso", "sh")
+    Note over H: 's' + 'l' -> 'l' | Clave rota a "sol"
+    H->>H: vigenereHelper("a", "sol", "shl")
+    Note over H: 'a' + 's' -> 's' | Clave rota a "ols"
+    H->>H: vigenereHelper("", "ols", "shls")
+    Note over H: Caso base alcanzado (mensaje vacío)
+    H-->>Usuario: Retorna "shls"
+```
+
+### 3. Explicación de la Complejidad Espacial y Pila
+
+- **Espacio Constante $O(1)$:** Al estar anotada con `@tailrec`, la llamada recursiva a `vigenereHelper` es el último paso de la función. El compilador de Scala reutiliza un único marco en la pila de llamadas (*stack frame*).
+- **Manejo de Caracteres Especiales:** Los espacios, números o signos no consumen letras de la clave `sol` ni desplazan la secuencia de la clave; pasan directo al acumulador.

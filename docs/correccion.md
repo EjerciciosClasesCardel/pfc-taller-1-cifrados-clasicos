@@ -226,3 +226,41 @@ cesarCola("casa", 3, "")
 
 Por ejemplo, en la tercera fila: $acc = \texttt{"fd"}$ y
 $f(\texttt{"sa"}, 3) = \texttt{"vd"}$, y $\texttt{"fd"} \cdot \texttt{"vd"} = \texttt{"fdvd"}$.
+
+
+
+
+
+
+
+## Punto 5: Demostracion matematica del conteo de mensajes $C(n, a)$
+
+vamos demostrar la validez de la función de recurrencia donde vamos calcular la cantidad de mensajes distintos de longitud $n$ sobre un alfabeto de $a$ letras sin contener dos caracteres idénticos de manera consecutiva:
+
+$$C(n, a) = \begin{cases} 1 & \text{si } n = 0 \\ a & \text{si } n = 1 \\ (a - 1) \cdot C(n - 1, a) & \text{si } n > 1 \end{cases}$$
+
+### Demostracion por inducción matematica
+
+#### 1. Casos base
+- **Para $n = 0$:** Solo existe un mensaje de longitud $0$, que es la cadena vacía $\epsilon$. Por lo tanto, $C(0, a) = 1$.
+- **Para $n = 1$:** Para un mensaje de un solo símbolo, se puede elegir cualquiera de las $a$ letras del alfabeto disponible. Por lo tanto, $C(1, a) = a$.
+
+#### 2. Hipotesis inductiva
+Asumimos que para una longitud $k \ge 1$, la cantidad de mensajes válidos sin letras iguales seguidas está dada por $C(k, a)$.
+
+#### 3. Paso inductivo
+Queremos determinar el número de mensajes válidos de longitud $k + 1$.
+
+Cualquier mensaje válido de longitud $k + 1$ se puede formar tomando un mensaje válido de longitud $k$ y anexándole un nuevo carácter al final.
+
+Dado que la regla exige que no existan dos letras iguales seguidas, el último carácter (en la posición $k + 1$) **no puede ser igual** al carácter ubicado en la posición $k$. Como el alfabeto tiene $a$ letras en total y hay $1$ letra prohibida (la última letra del mensaje de longitud $k$), quedan exactamente $(a - 1)$ opciones válidas para la nueva letra.
+
+Por el **Principio Multiplicativo del Conteo**:
+$$C(k + 1, a) = (a - 1) \cdot C(k, a)$$
+
+Esto confirma la relación de recurrencia para todo $n > 1$.
+
+#### formulación en forma cerrada
+Resolviendo la relación de recurrencia para $n \ge 1$:
+
+$$C(n, a) = a \cdot (a - 1)^{n - 1}$$
