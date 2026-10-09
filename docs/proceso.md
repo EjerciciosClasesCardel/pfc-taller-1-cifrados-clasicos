@@ -831,4 +831,355 @@ sequenceDiagram
 
 ---
 
-# Punto 5: Vigenère y conteo de mensajes (proceso)
+# Punto 5: `combinaciones` y `vigenere` (proceso)
+
+Este punto tiene dos funciones: `combinaciones`, que cuenta mensajes sin letras iguales seguidas, y `vigenere`, que cifra con una palabra clave. Las dos usan una función auxiliar `aux` con **recursión de cola**.
+
+---
+
+# Parte A: `combinaciones`
+
+## Definición del algoritmo
+
+```Scala
+def combinaciones(n: Int, a: Int): BigInt = {
+  @tailrec
+  def aux(i: Int, acc: BigInt): BigInt =
+    if (i > n) acc
+    else aux(i + 1, acc * (a - 1))
+
+  if (n <= 0) BigInt(1)
+  else if (n == 1) BigInt(a)
+  else aux(2, BigInt(a))
+}
+```
+
+El enunciado dice que $C(n, a) = (a - 1) \cdot C(n-1, a)$, con $C(0, a) = 1$ y $C(1, a) = a$. Es decir, para formar un mensaje de longitud `n` se toma uno de longitud `n - 1` y se le agrega una letra distinta de la última: hay `a - 1` opciones.
+
+La idea del algoritmo:
+
+* Los casos `n = 0` y `n = 1` se contestan directo, sin recursión.
+* Para `n >= 2` se parte del valor de `n = 1` (que es `a`) y se **multiplica por `a - 1`** una vez por cada longitud que falta. Ese valor que va creciendo se guarda en el acumulador `acc`.
+* `i` dice para qué longitud se va a calcular el siguiente valor: `acc` siempre vale $C(i-1, a)$.
+* Se usa `BigInt` porque el resultado crece muy rápido (con 26 letras, cada longitud nueva lo multiplica por 25) y un `Int` se desbordaría pronto.
+
+## Explicación paso a paso
+
+### Casos base de `combinaciones`
+
+```Scala
+if (n <= 0) BigInt(1)
+else if (n == 1) BigInt(a)
+```
+
+* Con `n = 0` solo existe el mensaje vacío, así que la respuesta es 1.
+* Con `n = 1` hay un mensaje por cada letra del alfabeto, o sea `a`.
+
+### Caso base de `aux`
+
+```Scala
+if (i > n) acc
+```
+
+Cuando `i` ya pasó de `n`, se calcularon todas las longitudes hasta `n`, así que el acumulador **es** la respuesta.
+
+### Caso recursivo de `aux`
+
+```Scala
+else aux(i + 1, acc * (a - 1))
+```
+
+En cada llamada:
+
+* `i` avanza de a uno.
+* El acumulador se multiplica por `a - 1`. Esa multiplicación se hace **antes** de llamar y viaja como argumento.
+* La llamada recursiva es lo último que se hace, así que no queda nada pendiente.
+
+---
+
+## Llamados de pila: `combinaciones(4, 3)`
+
+Con 3 letras y mensajes de longitud 4 se espera $3 \cdot 2^3 = 24$.
+
+### Paso 1: llamada inicial
+
+```Scala
+combinaciones(4, 3)    // n = 4 >= 2: llama a aux(2, 3)
+```
+
+### Paso 2
+
+```Scala
+aux(2, 3)              // 2 <= 4: llama a aux(3, 3 * 2)
+```
+
+### Paso 3
+
+```Scala
+aux(3, 6)              // 3 <= 4: llama a aux(4, 6 * 2)
+```
+
+### Paso 4
+
+```Scala
+aux(4, 12)             // 4 <= 4: llama a aux(5, 12 * 2)
+```
+
+### Paso 5: caso base
+
+```Scala
+aux(5, 24)             // 5 > 4: devuelve acc = 24
+```
+
+Y la pila en cada paso:
+
+```
+Paso 1:   [ combinaciones(4, 3) ]
+Paso 2:   [ aux(2, 3)   ]
+Paso 3:   [ aux(3, 6)   ]
+Paso 4:   [ aux(4, 12)  ]
+Paso 5:   [ aux(5, 24)  ]   -> devuelve 24
+```
+
+Siempre hay **un solo marco de `aux`**: cuando se hace la llamada recursiva, el marco anterior ya no tiene nada más que hacer y se reutiliza. Con `@tailrec` el compilador lo convierte en un ciclo que va cambiando `i` y `acc`. La función `combinaciones` solo se queda esperando el resultado final, sin hacer nada con él.
+
+---
+
+## Diferencia con recursión normal
+
+Si se escribiera la fórmula tal cual, $C(n, a) = (a-1) \cdot C(n-1, a)$, la multiplicación quedaría pendiente en cada llamado:
+
+```Scala
+combinaciones(4, 3)
+= 2 * combinaciones(3, 3)
+= 2 * (2 * combinaciones(2, 3))
+= 2 * (2 * (2 * combinaciones(1, 3)))
+= 2 * (2 * (2 * 3))       // recién aquí se multiplica
+= 24
+```
+
+Cada `2 *` es una operación esperando en la pila, así que con un `n` grande habría `n` marcos y podría haber desbordamiento. Con el acumulador la multiplicación se hace antes de llamar, y el resultado parcial viaja como parámetro.
+
+---
+
+## Ejemplo de uso
+
+```Scala
+val resultado = combinaciones(4, 3)
+println(resultado)  // 24
+```
+
+El resultado de `combinaciones(4, 3)` es `24`.
+
+## Diagrama de llamados de pila con recursión de cola
+
+```mermaid
+sequenceDiagram
+    participant Main as combinaciones(4, 3)
+    participant L1 as aux(2, 3)
+    participant L2 as aux(3, 6)
+    participant L3 as aux(4, 12)
+    participant L4 as aux(5, 24)
+
+    Main->>L1: llamada inicial
+    L1->>L2: tail call con (3, 3*2)
+    L2->>L3: tail call con (4, 6*2)
+    L3->>L4: tail call con (5, 12*2)
+    L4-->>Main: return 24
+```
+
+---
+
+# Parte B: `vigenere`
+
+## Definición del algoritmo
+
+```Scala
+def vigenere(m: Mensaje, clave: Clave): Mensaje = {
+  if (clave.isEmpty) {
+    m
+  } else {
+    @tailrec
+    def aux(i: Int, idxClave: Int, acc: Mensaje): Mensaje = {
+      if (i >= m.length) {
+        acc
+      } else {
+        val c = m(i)
+        if (esMinuscula(c)) {
+          val posicion = c - 'a'
+          val k = clave(idxClave % clave.length) - 'a'
+          val nuevaposicion = (posicion + k) % 26
+          val ajustada = if (nuevaposicion < 0) nuevaposicion + 26 else nuevaposicion
+          val nuevaLetra = ('a' + ajustada).toChar
+          aux(i + 1, idxClave + 1, acc + nuevaLetra)
+        } else {
+          aux(i + 1, idxClave, acc + c)
+        }
+      }
+    }
+
+    aux(0, 0, "")
+  }
+}
+```
+
+Vigenère es como el César, pero en lugar de un solo desplazamiento usa **una palabra clave**: cada letra del mensaje se corre según la letra de la clave que le toca, y la clave se repite cuando se acaba.
+
+* `i` es la posición del mensaje que se está leyendo.
+* `idxClave` cuenta **cuántas letras se han cifrado**. Con él se sabe qué letra de la clave toca: `clave(idxClave % clave.length)`. El `%` es lo que hace que la clave se repita.
+* `acc` es el mensaje cifrado hasta el momento (igual que en `cesarCola`).
+* Aquí hay dos contadores, `i` e `idxClave`, y no siempre avanzan juntos: lo que no es una letra minúscula (espacios, números, signos) se copia pero **no gasta letra de la clave**, así que en ese caso solo avanza `i`.
+
+## Explicación paso a paso
+
+### Clave vacía
+
+```Scala
+if (clave.isEmpty) m
+```
+
+Sin clave no hay desplazamiento, así que el mensaje sale igual. Además esto evita dividir por cero en `idxClave % clave.length`.
+
+### Caso base de `aux`
+
+```Scala
+if (i >= m.length) acc
+```
+
+Cuando `i` llega al final del mensaje ya no hay nada por leer, y el acumulador es la respuesta.
+
+### Caso recursivo de `aux`
+
+Se toma `c = m(i)`. Hay dos ramas.
+
+**Rama 1: `c` es una letra minúscula.** Los cálculos son los mismos del César, pero el desplazamiento sale de la clave:
+
+1. `posicion = c - 'a'`: la posición de la letra en el alfabeto.
+2. `k = clave(idxClave % clave.length) - 'a'`: el desplazamiento que corresponde, que es la posición de la letra de la clave que toca.
+3. `nuevaposicion = (posicion + k) % 26`: se suman y se da la vuelta al alfabeto con el módulo.
+4. `ajustada`: se suma 26 si saliera negativo (aquí no pasa, porque las dos posiciones son positivas, pero se deja igual que en el César).
+5. `nuevaLetra = ('a' + ajustada).toChar`: la posición se vuelve letra.
+
+Luego se llama avanzando **los dos contadores**:
+
+```Scala
+aux(i + 1, idxClave + 1, acc + nuevaLetra)
+```
+
+**Rama 2: `c` no es una letra minúscula.** Se copia tal cual y la clave no se toca:
+
+```Scala
+aux(i + 1, idxClave, acc + c)
+```
+
+En las dos ramas la llamada recursiva es lo último que se hace: el `acc + ...` se calcula antes de llamar. Por eso es recursión de cola.
+
+---
+
+## Llamados de pila: `vigenere("no si", "abc")`
+
+Los desplazamientos de la clave son `a` = 0, `b` = 1, `c` = 2, y se repiten. Primero a mano:
+
+| Carácter | ¿Letra? | Letra de la clave | Cálculo | Resultado |
+|---|---|---|---|---|
+| `n` | sí | `a` (0) | 13 + 0 = 13 | `n` |
+| `o` | sí | `b` (1) | 14 + 1 = 15 | `p` |
+| ` ` | no | no se usa | se copia | ` ` |
+| `s` | sí | `c` (2) | 18 + 2 = 20 | `u` |
+| `i` | sí | `a` (0), la clave dio la vuelta | 8 + 0 = 8 | `i` |
+
+Fíjese en el espacio: no gasta clave. Por eso a la `s` le toca la `c` y no la `a`.
+
+### Paso 1: llamada inicial
+
+```Scala
+vigenere("no si", "abc")     // clave no vacía: llama a aux(0, 0, "")
+```
+
+### Paso 2
+
+```Scala
+aux(0, 0, "")                // lee 'n', clave 'a' -> 'n'
+```
+
+### Paso 3
+
+```Scala
+aux(1, 1, "n")               // lee 'o', clave 'b' -> 'p'
+```
+
+### Paso 4
+
+```Scala
+aux(2, 2, "np")              // lee ' ': se copia, idxClave no cambia
+```
+
+### Paso 5
+
+```Scala
+aux(3, 2, "np ")             // lee 's', clave 'c' -> 'u'
+```
+
+### Paso 6
+
+```Scala
+aux(4, 3, "np u")            // lee 'i', clave 'a' (3 % 3 = 0) -> 'i'
+```
+
+### Paso 7: caso base
+
+```Scala
+aux(5, 4, "np ui")           // i = 5 es la longitud: devuelve acc = "np ui"
+```
+
+Y la pila en cada paso:
+
+```
+Paso 1:   [ vigenere("no si", "abc") ]
+Paso 2:   [ aux(0, 0, "")      ]
+Paso 3:   [ aux(1, 1, "n")     ]
+Paso 4:   [ aux(2, 2, "np")    ]
+Paso 5:   [ aux(3, 2, "np ")   ]
+Paso 6:   [ aux(4, 3, "np u")  ]
+Paso 7:   [ aux(5, 4, "np ui") ]   -> devuelve "np ui"
+```
+
+Igual que en `cesarCola`, siempre hay **un solo marco de `aux`**. Cada llamada reemplaza a la anterior, el compilador lo convierte en un ciclo, y no hay fase de regreso: el valor del caso base es directamente la respuesta final.
+
+---
+
+## Diferencia con recursión normal
+
+Si el cifrado se hiciera con recursión normal (cifrar la primera letra y pegarla adelante del resultado de cifrar el resto), cada letra dejaría un llamado esperando en la pila, y con mensajes largos podría desbordarse. Además habría que pasar la posición de la clave por parámetro para saber cuál letra toca. Con `aux` el mensaje cifrado se va armando en `acc` y la posición de la clave viaja en `idxClave`, así que la pila es constante sin importar el largo del mensaje.
+
+---
+
+## Ejemplo de uso
+
+```Scala
+val resultado = vigenere("ataque", "sol")
+println(resultado)  // shliip
+```
+
+El resultado de `vigenere("ataque", "sol")` es `"shliip"`.
+
+## Diagrama de llamados de pila con recursión de cola
+
+```mermaid
+sequenceDiagram
+    participant Main as vigenere(no si, abc)
+    participant L1 as aux(0, 0, vacio)
+    participant L2 as aux(1, 1, n)
+    participant L3 as aux(2, 2, np)
+    participant L4 as aux(3, 2, np espacio)
+    participant L5 as aux(4, 3, np u)
+    participant L6 as aux(5, 4, np ui)
+
+    Main->>L1: llamada inicial
+    L1->>L2: n + a = n, idxClave sube
+    L2->>L3: o + b = p, idxClave sube
+    L3->>L4: espacio se copia, idxClave igual
+    L4->>L5: s + c = u, idxClave sube
+    L5->>L6: i + a = i, idxClave sube
+    L6-->>Main: return np ui
+```
