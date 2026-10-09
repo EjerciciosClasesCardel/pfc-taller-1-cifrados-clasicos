@@ -127,9 +127,361 @@ sequenceDiagram
     L4->>L5: tail call con (1, 120)
     L5-->>Main: return 120
 ```
-## A partir de acá, se hace el desarrollo del taller, lo anterior es el ejemplo que puso Cardel
 
-# Algoritmo frecuencias con recursión de cola
+---
+
+# A partir de acá se desarrolla el taller (lo anterior es el ejemplo del profesor)
+
+---
+
+# Punto 1: Cifrado César con recursión lineal (proceso)
+
+## Definición del algoritmo
+
+```Scala
+def cesar(m: Mensaje, k: Int): Mensaje =
+  if (m.isEmpty) {
+    ""
+  } else {
+    val c = m.head
+    if (esMinuscula(c)) {
+      val posicion = c - 'a'
+      val nuevaposicion = (posicion + k).toInt % 26
+
+      val ajustada = if (nuevaposicion < 0) nuevaposicion + 26 else nuevaposicion
+      val nuevaLetra = ('a' + ajustada).toChar
+      nuevaLetra.toString + cesar(m.tail, k)
+    } else {
+      c.toString + cesar(m.tail, k)
+    }
+  }
+```
+
+La idea del César es sencilla: cada letra se corre `k` lugares en el alfabeto, y si nos pasamos de la `z` seguimos contando desde la `a`. Lo que no es una letra minúscula (espacios, números, mayúsculas, signos) se deja igual.
+
+Así quedó pensada la función:
+
+* Si el mensaje está vacío, no hay nada que cifrar y devolvemos el mensaje vacío.
+* Si no está vacío, miramos solo la **primera letra** (`m.head`), la cifrada, y le pegamos adelante el resultado de cifrar **todo lo demás** (`m.tail`). Ese "todo lo demás" lo resuelve la misma función, llamándose a sí misma con un mensaje más corto.
+* Cada llamada hace el mismo trabajo con una letra menos, y por eso se llama recursión **lineal**: hay un único llamado recursivo por llamada y el mensaje se acorta de a una letra.
+
+## Explicación paso a paso
+
+### Caso base
+
+```Scala
+if (m.isEmpty) ""
+```
+
+Cuando el mensaje ya no tiene letras no queda nada por hacer y devolvemos `""`. Es el punto donde la recursión se detiene. Sin este caso la función se llamaría para siempre, porque `m.tail` de un mensaje vacío da error.
+
+### Caso recursivo
+
+Si el mensaje tiene al menos un carácter, lo separamos en `c = m.head` y `m.tail`. Aquí hay dos ramas.
+
+**Rama 1: `c` es una letra minúscula.** Hacemos cuatro cálculos en orden:
+
+1. `posicion = c - 'a'`: la posición de la letra en el alfabeto (`a` es 0, `b` es 1, ..., `z` es 25).
+2. `nuevaposicion = (posicion + k) % 26`: le sumamos el desplazamiento y usamos el módulo 26 para que, si nos pasamos de la `z`, volvamos a empezar. Con `k = 29` y `a` quedaría `29 % 26 = 3`, o sea `d`. Por eso un desplazamiento de 29 es igual a uno de 3.
+3. `ajustada`: aquí hay un detalle importante. En Scala el `%` conserva el signo del número. Por ejemplo `-1 % 26` da `-1` y no `25`. Entonces, si `nuevaposicion` salió negativa, le sumamos 26 para llevarla de vuelta al rango 0 a 25. Es lo que hace funcionar los desplazamientos negativos: con `cesar("abc", -1)` la `a` da `0 + (-1) = -1`, luego `-1 % 26 = -1`, luego `-1 + 26 = 25`, que es la `z`.
+4. `nuevaLetra = ('a' + ajustada).toChar`: convertimos la posición de nuevo en letra.
+
+Y el resultado de esta rama es:
+
+```Scala
+nuevaLetra.toString + cesar(m.tail, k)
+```
+
+**Rama 2: `c` no es una letra minúscula.** No se cifra, se copia tal cual:
+
+```Scala
+c.toString + cesar(m.tail, k)
+```
+
+### La operación pendiente
+
+Aquí está lo más importante para entender el proceso. En las dos ramas, la llamada `cesar(m.tail, k)` **no es lo último que se hace**: cuando regresa, todavía hay que pegarle adelante la letra (`nuevaLetra.toString + ...`). Mientras esa llamada se resuelve, la letra ya cifrada tiene que quedarse guardada esperando. Ese "guardado" es justamente un marco en la pila de llamados. Por eso esta versión es recursión lineal y no de cola: una operación pendiente por cada letra.
+
+---
+
+## Llamados de pila: `cesar("casa", 3)`
+
+Primero calculamos a mano qué le pasa a cada letra con `k = 3`:
+
+| Letra | Posición | Posición + 3 | Nueva letra |
+|---|---|---|---|
+| `c` | 2 | 5 | `f` |
+| `a` | 0 | 3 | `d` |
+| `s` | 18 | 21 | `v` |
+| `a` | 0 | 3 | `d` |
+
+Ahora la ejecución. Al principio la pila **crece** (cada llamada se queda esperando) y al final se **vacía** (cada llamada recibe su respuesta y completa su pendiente). En los dibujos, lo de arriba es la llamada que se está ejecutando y lo de abajo son las que esperan.
+
+### Fase 1: la pila crece
+
+**Paso 1: llamada inicial**
+
+```Scala
+cesar("casa", 3)       // lee 'c' -> 'f'; llama a cesar("asa", 3)
+```
+
+Pila: 1 marco.
+
+**Paso 2**
+
+```Scala
+cesar("asa", 3)        // lee 'a' -> 'd'; llama a cesar("sa", 3)
+cesar("casa", 3)       // espera: "f" + (resultado de arriba)
+```
+
+Pila: 2 marcos.
+
+**Paso 3**
+
+```Scala
+cesar("sa", 3)         // lee 's' -> 'v'; llama a cesar("a", 3)
+cesar("asa", 3)        // espera: "d" + (resultado de arriba)
+cesar("casa", 3)       // espera: "f" + (resultado de arriba)
+```
+
+Pila: 3 marcos.
+
+**Paso 4**
+
+```Scala
+cesar("a", 3)          // lee 'a' -> 'd'; llama a cesar("", 3)
+cesar("sa", 3)         // espera: "v" + (resultado de arriba)
+cesar("asa", 3)        // espera: "d" + (resultado de arriba)
+cesar("casa", 3)       // espera: "f" + (resultado de arriba)
+```
+
+Pila: 4 marcos.
+
+**Paso 5: caso base**
+
+```Scala
+cesar("", 3)           // mensaje vacío: devuelve ""
+cesar("a", 3)          // espera: "d" + (resultado de arriba)
+cesar("sa", 3)         // espera: "v" + (resultado de arriba)
+cesar("asa", 3)        // espera: "d" + (resultado de arriba)
+cesar("casa", 3)       // espera: "f" + (resultado de arriba)
+```
+
+Pila: 5 marcos. Este es el punto más alto de la pila: uno por cada letra, más uno por el mensaje vacío.
+
+### Fase 2: la pila se vacía
+
+Ahora cada llamada recibe lo que devolvió la de arriba y completa su operación pendiente, de arriba hacia abajo:
+
+```Scala
+cesar("", 3)     = ""                    // el caso base
+cesar("a", 3)    = "d" + ""     = "d"
+cesar("sa", 3)   = "v" + "d"    = "vd"
+cesar("asa", 3)  = "d" + "vd"   = "dvd"
+cesar("casa", 3) = "f" + "dvd"  = "fdvd"
+```
+
+Resultado final: `"fdvd"`, que es el esperado por el enunciado.
+
+---
+
+## Diferencia con recursión de cola
+
+* Con un mensaje de `n` letras, esta versión necesita `n + 1` marcos en la pila al mismo tiempo. Con mensajes muy largos (cientos de miles de letras) la pila se puede llenar y el programa se cae con un `StackOverflowError`.
+* En el Punto 2 resolvemos lo mismo moviendo la operación pendiente a un parámetro (el acumulador), así la llamada recursiva sí queda como lo último que se hace.
+
+---
+
+## Ejemplo de uso
+
+```Scala
+val resultado = cesar("casa", 3)
+println(resultado)  // fdvd
+```
+
+El resultado de `cesar("casa", 3)` es `"fdvd"`.
+
+
+## Diagrama de llamados de pila con recursión lineal
+
+Las flechas continuas hacia la derecha son los llamados (la pila crece) y las punteadas son los retornos (la pila se vacía):
+
+```mermaid
+sequenceDiagram
+    participant A as cesar(casa, 3)
+    participant B as cesar(asa, 3)
+    participant C as cesar(sa, 3)
+    participant D as cesar(a, 3)
+    participant E as cesar(vacio, 3)
+
+    A->>B: pendiente f + resultado
+    B->>C: pendiente d + resultado
+    C->>D: pendiente v + resultado
+    D->>E: pendiente d + resultado
+    E-->>D: devuelve vacio
+    D-->>C: devuelve d
+    C-->>B: devuelve vd
+    B-->>A: devuelve dvd
+    Note over A: devuelve fdvd
+```
+
+---
+
+# Punto 2: Cifrado César con recursión de cola (proceso)
+
+## Definición del algoritmo
+
+```Scala
+@tailrec
+final def cesarCola(m: Mensaje, k: Int, acc: Mensaje = ""): Mensaje =
+
+  if (m.isEmpty)
+    acc
+  else {
+    val c = m.head
+    if (esMinuscula(c)) {
+      val posicion = c - 'a'
+      val nuevapo = (posicion + k).toInt % 26
+      val ajustar = if (nuevapo < 0) nuevapo + 26 else nuevapo
+      val nuevaletra = ('a' + ajustar).toChar
+      cesarCola(m.tail, k, acc + nuevaletra)
+    } else {
+      cesarCola(m.tail, k, acc + c)
+    }
+  }
+```
+
+Esta función hace exactamente lo mismo que `cesar`, pero cambiando la forma de llevar el trabajo:
+
+* Aparece un tercer parámetro, `acc` (el **acumulador**), donde vamos guardando el mensaje ya cifrado. Empieza en `""` por el valor por defecto, así que se puede llamar solo con `cesarCola("casa", 3)`.
+* En vez de esperar a que vuelva la respuesta del resto para pegarle la letra adelante, **cifra la letra y la agrega al acumulador antes de llamar**. Lo que viaja al siguiente llamado ya trae el trabajo hecho.
+* Así, cuando se hace la llamada recursiva no queda ninguna operación pendiente: es lo último que hace la función. Eso es una recursión de cola.
+* La anotación `@tailrec` le pide al compilador que verifique esto. Si en algún punto la llamada recursiva no fuera lo último, el programa no compilaría. Además, la función es `final` porque `@tailrec` solo funciona en métodos que no se pueden sobrescribir.
+
+## Explicación paso a paso
+
+### Caso base
+
+```Scala
+if (m.isEmpty) acc
+```
+
+Cuando ya no quedan letras por leer, el trabajo está completo y el acumulador **es** la respuesta. A diferencia de `cesar`, donde el caso base devolvía `""` y la respuesta se armaba al regresar, aquí devolvemos `acc` tal cual.
+
+### Caso recursivo
+
+Se toma `c = m.head` y se cifra con la misma cuenta de `cesar` (posición, módulo 26, ajuste si es negativo y conversión a letra). Después:
+
+```Scala
+cesarCola(m.tail, k, acc + nuevaletra)   // si c es una letra minúscula
+cesarCola(m.tail, k, acc + c)            // si no lo es
+```
+
+En cada llamada:
+
+* El mensaje pierde su primera letra (`m.tail`).
+* El desplazamiento `k` no cambia.
+* El acumulador gana una letra al final: la cifrada si era minúscula, o la misma si no lo era.
+* La llamada recursiva es la **última instrucción**: la suma `acc + nuevaletra` se calcula **antes** de llamar y viaja como argumento, así que nada queda esperando.
+
+---
+
+## Llamados de pila: `cesarCola("casa", 3)`
+
+Las letras se cifran igual que en el Punto 1 (`c` a `f`, `a` a `d`, `s` a `v`, `a` a `d`). Lo que cambia es cómo se ve la ejecución. Aquí cada paso reemplaza al anterior en vez de apilarse:
+
+### Paso 1: llamada inicial
+
+```Scala
+cesarCola("casa", 3, "")      // lee 'c' -> 'f'
+```
+
+### Paso 2
+
+```Scala
+cesarCola("asa", 3, "f")      // lee 'a' -> 'd'
+```
+
+### Paso 3
+
+```Scala
+cesarCola("sa", 3, "fd")      // lee 's' -> 'v'
+```
+
+### Paso 4
+
+```Scala
+cesarCola("a", 3, "fdv")      // lee 'a' -> 'd'
+```
+
+### Paso 5: caso base
+
+```Scala
+cesarCola("", 3, "fdvd")      // mensaje vacío: devuelve acc = "fdvd"
+```
+
+Y la pila en cada paso:
+
+```
+Paso 1:   [ cesarCola("casa", 3, "")     ]
+Paso 2:   [ cesarCola("asa",  3, "f")    ]
+Paso 3:   [ cesarCola("sa",   3, "fd")   ]
+Paso 4:   [ cesarCola("a",    3, "fdv")  ]
+Paso 5:   [ cesarCola("",     3, "fdvd") ]   -> devuelve "fdvd"
+```
+
+Siempre hay **un solo marco**. Cuando se hace la llamada recursiva, el marco anterior ya no tiene nada más que hacer, así que se puede reutilizar. Eso es lo que hace el compilador con `@tailrec`: convierte la recursión en un ciclo que va cambiando los valores de `m` y `acc`. Tampoco hay fase de regreso: el valor que se obtiene en el caso base es directamente la respuesta final, sin pegar nada en el camino de vuelta.
+
+---
+
+## ¿Por qué una crece y la otra no?
+
+La diferencia está en **dónde se guarda el trabajo que falta**:
+
+| | `cesar` (lineal) | `cesarCola` (de cola) |
+|---|---|---|
+| Qué hace con la letra cifrada | la deja esperando en el marco de la pila | la agrega al acumulador antes de llamar |
+| ¿Qué pasa después de la llamada recursiva? | hay que pegarle la letra adelante | nada, el resultado se devuelve tal cual |
+| Marcos en la pila con `n` letras | `n + 1` | 1 |
+| Espacio en la pila | crece con el tamaño del mensaje | constante |
+| Riesgo con mensajes muy largos | `StackOverflowError` | ninguno |
+
+En `cesar`, la letra cifrada solo existe dentro del marco que la calculó. Si ese marco desaparece, se pierde, y por eso cada llamada tiene que quedarse esperando a que la de más arriba termine. En `cesarCola`, esa letra ya fue pasada al siguiente llamado dentro del acumulador, así que el marco actual no tiene nada que proteger y puede reutilizarse.
+
+---
+
+## Ejemplo de uso
+
+```Scala
+val resultado = cesarCola("casa", 3)
+println(resultado)  // fdvd
+```
+
+El resultado de `cesarCola("casa", 3)` es `"fdvd"`, el mismo de `cesar("casa", 3)`.
+
+
+## Diagrama de llamados de pila con recursión de cola
+
+```mermaid
+sequenceDiagram
+    participant Main as cesarCola(casa, 3)
+    participant L1 as cesarCola(casa, 3, vacio)
+    participant L2 as cesarCola(asa, 3, f)
+    participant L3 as cesarCola(sa, 3, fd)
+    participant L4 as cesarCola(a, 3, fdv)
+    participant L5 as cesarCola(vacio, 3, fdvd)
+
+    Main->>L1: llamada inicial con acc vacio
+    L1->>L2: tail call con acc = f
+    L2->>L3: tail call con acc = fd
+    L3->>L4: tail call con acc = fdv
+    L4->>L5: tail call con acc = fdvd
+    L5-->>Main: return fdvd
+```
+
+---
+
+# Punto 3: Algoritmo frecuencias con recursión de cola
 
 ## Definición del algoritmo
 
@@ -348,6 +700,8 @@ sequenceDiagram
     Main->>Ord: ordenar de esa lista
     Ord-->>Main: devuelve List((a,2),(c,1),(s,1))
 ```
+
+---
 
 # Punto 4: Algoritmo para Romper el Cifrado César con Recursión de Cola (proceso)
 
@@ -611,3 +965,6 @@ sequenceDiagram
     B5-->>Main: return (7 - 4 + 26) % 26 = 3
 ```
 
+---
+
+# Punto 5: Vigenère y conteo de mensajes (proceso)
