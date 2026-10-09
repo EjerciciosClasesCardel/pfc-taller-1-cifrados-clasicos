@@ -797,4 +797,177 @@ El resultado es `"iiee"` y no `"eeaa"`. De nuevo coincide con la fórmula, porqu
 
 ---------------------------
 
-# Punto 5: Vigenère y conteo de mensajes (corrección)
+# Punto 5: `combinaciones` y `vigenere` (corrección)
+
+
+Las dos funciones usan una auxiliar de cola (`@tailrec`), así que son procesos
+iterativos. Para cada una se define qué guarda el estado, cuál es su
+**invariante** (algo que se cumple en todos los pasos) y se muestra que al
+terminar la invariante da la respuesta correcta.
+
+---
+
+### 5.1 `combinaciones`
+
+**Qué debe calcular.** El número de mensajes de longitud $n$ sin letras iguales
+seguidas, con un alfabeto de $a$ letras:
+
+$$
+C(0, a) = 1, \qquad C(1, a) = a, \qquad C(n, a) = (a - 1) \cdot C(n-1, a) \ \text{ si } n > 1
+$$
+
+**El programa.**
+
+```scala
+def combinaciones(n: Int, a: Int): BigInt = {
+  @tailrec
+  def aux(i: Int, acc: BigInt): BigInt =
+    if (i > n) acc
+    else aux(i + 1, acc * (a - 1))
+
+  if (n <= 0) BigInt(1)
+  else if (n == 1) BigInt(a)
+  else aux(2, BigInt(a))
+}
+```
+
+**Casos base.** Si $n = 0$ el programa devuelve $1 = C(0, a)$. Si $n = 1$ devuelve
+$a = C(1, a)$. Coinciden con la definición.
+
+**Caso $n \geq 2$.** Aquí trabaja `aux`. La idea es que `acc` siempre guarda el
+valor de $C$ para la longitud anterior a `i`:
+
+- Estado: $s = (i, acc)$.
+- Estado inicial: $s_0 = (2, a)$.
+- Estado final: $i > n$.
+- Invariante: $\text{Inv}(i, acc) \equiv 2 \leq i \leq n+1 \ \land\ acc = C(i-1, a)$.
+- Transformación: $(i, acc) \mapsto (i+1,\ acc \cdot (a-1))$.
+
+**1. Al inicio se cumple.** Con $i = 2$ y $acc = a$: $acc = C(1, a)$, que es el caso base.
+
+**2. Cada paso la conserva.** Si $acc = C(i-1, a)$ y $i \leq n$, el nuevo valor es
+
+$$
+acc \cdot (a-1) = (a-1) \cdot C(i-1, a) = C(i, a)
+$$
+
+La última igualdad es la recurrencia de $C$ (vale porque $i \geq 2$). Como el nuevo
+`i` es $i+1$, se tiene $acc' = C((i+1)-1, a)$: la invariante sigue cumpliéndose.
+
+**3. Al terminar da la respuesta.** En el estado final $i = n+1$, así que
+$acc = C(n, a)$, justo lo que devuelve `aux`.
+
+**4. Siempre termina.** `i` sube de 1 en 1 desde 2 hasta $n+1$: son $n - 1$ pasos.
+
+Por lo tanto $\text{combinaciones}(n, a) = C(n, a)$. $\blacksquare$
+
+*Nota:* se usa `BigInt` porque $C(n, 26)$ crece como $25^n$ y con `Int` se
+desbordaría muy pronto.
+
+---
+
+### 5.2 `vigenere`
+
+**Qué debe calcular.** Cada letra del mensaje se corre según la letra de la clave
+que le toca; la clave se repite, y lo que no es letra se copia sin gastar clave.
+Sea $\text{pos}(c) = c - \texttt{'a'}$ y $L(j)$ la cantidad de letras minúsculas
+que hay en el mensaje antes de la posición $j$. La letra $m_j$ se cifra con la
+letra número $L(j) \bmod r$ de la clave (de longitud $r$):
+
+$$
+V(m,k)_j = \text{letra}\big((\text{pos}(m_j) + \text{pos}(k_{L(j) \bmod r})) \bmod 26\big) \quad \text{si } m_j \text{ es letra minúscula}
+$$
+
+y $V(m,k)_j = m_j$ en otro caso. Con clave vacía, $V(m, \varepsilon) = m$.
+
+**El programa.**
+
+```scala
+def vigenere(m: Mensaje, clave: Clave): Mensaje = {
+  if (clave.isEmpty) {
+    m
+  } else {
+    @tailrec
+    def aux(i: Int, idxClave: Int, acc: Mensaje): Mensaje = {
+      if (i >= m.length) {
+        acc
+      } else {
+        val c = m(i)
+        if (esMinuscula(c)) {
+          val posicion = c - 'a'
+          val k = clave(idxClave % clave.length) - 'a'
+          val nuevaposicion = (posicion + k) % 26
+          val ajustada = if (nuevaposicion < 0) nuevaposicion + 26 else nuevaposicion
+          val nuevaLetra = ('a' + ajustada).toChar
+          aux(i + 1, idxClave + 1, acc + nuevaLetra)
+        } else {
+          aux(i + 1, idxClave, acc + c)
+        }
+      }
+    }
+
+    aux(0, 0, "")
+  }
+}
+```
+
+
+**Clave vacía.** Devuelve `m`, que es $V(m, \varepsilon)$. Además así se evita
+dividir por cero en `idxClave % clave.length`.
+
+**Clave no vacía.** Trabaja `aux`, con $n = |m|$:
+
+- Estado: $s = (i, idx, acc)$. `i` es la posición en el mensaje, `idx` cuántas
+  letras se han cifrado y `acc` el resultado hasta ahora.
+- Estado inicial: $s_0 = (0, 0, \text{""})$.
+- Estado final: $i \geq n$.
+- Invariante: $\text{Inv}(i, idx, acc) \equiv idx = L(i) \ \land\ acc = V(m,k)[0..i)$,
+  es decir, `acc` ya es la parte correcta de la respuesta y `idx` cuenta
+  exactamente las letras vistas.
+- Transformación: si $m_i$ no es letra, $(i+1,\ idx,\ acc \cdot m_i)$; si es letra,
+  $(i+1,\ idx+1,\ acc \cdot \text{letra cifrada con } k_{idx \bmod r})$.
+
+**1. Al inicio se cumple.** Con $i = 0$ no hay letras antes ($L(0) = 0 = idx$) y
+$acc$ es la cadena vacía, igual que $V(m,k)[0..0)$.
+
+**2. Cada paso la conserva.**
+
+- *Si $m_i$ no es letra:* el programa la copia, y la especificación también
+  ($V_i = m_i$). `idx` no cambia, igual que $L$: $L(i+1) = L(i)$.
+- *Si $m_i$ es letra:* por la invariante $idx = L(i)$, así que la letra de la clave
+  que usa el programa, $k_{idx \bmod r}$, es la misma que pide la especificación,
+  $k_{L(i) \bmod r}$. Luego el carácter agregado es $V_i$ y además
+  $idx + 1 = L(i+1)$.
+
+En los dos casos `acc` queda igual a $V(m,k)[0..i+1)$ y la invariante se mantiene.
+
+**3. Al terminar da la respuesta.** Con $i = n$, $acc = V(m,k)[0..n) = V(m,k)$.
+
+**4. Siempre termina.** `i` sube 1 en cada paso y para en $n$.
+
+Por lo tanto $\text{vigenere}(m, k) = V(m, k)$. $\blacksquare$
+
+*Nota:* se asume que la clave solo tiene minúsculas, como pide el enunciado.
+
+---
+
+### Conclusión Punto 5
+
+Con `combinaciones(4, 3)` (resultado esperado: $3 \cdot 2^3 = 24$):
+
+$$
+\text{combinaciones}(4,3) \to \text{aux}(2,3) \to \text{aux}(3,6) \to \text{aux}(4,12) \to \text{aux}(5,24) \to 24
+$$
+
+Cada llamado multiplica `acc` por $a - 1 = 2$ y sube `i`; cuando $i = 5 > 4$ se
+devuelve `acc`.
+
+Con `vigenere("no si", "abc")`, el espacio no consume clave (`idx` se queda en 2):
+
+$$
+\text{aux}(0,0,\text{""}) \to \text{aux}(1,1,\text{"n"}) \to \text{aux}(2,2,\text{"np"}) \to \text{aux}(3,2,\text{"np "}) \to \text{aux}(4,3,\text{"np u"}) \to \text{aux}(5,4,\text{"np ui"}) \to \text{"np ui"}
+$$
+
+En ambos casos la llamada recursiva es lo último que se hace, así que no queda
+nada pendiente: el valor del primer llamado es el del último. Eso es lo que
+verifica `@tailrec`.
