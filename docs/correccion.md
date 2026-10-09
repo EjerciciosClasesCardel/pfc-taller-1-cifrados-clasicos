@@ -226,3 +226,56 @@ cesarCola("casa", 3, "")
 
 Por ejemplo, en la tercera fila: $acc = \texttt{"fd"}$ y
 $f(\texttt{"sa"}, 3) = \texttt{"vd"}$, y $\texttt{"fd"} \cdot \texttt{"vd"} = \texttt{"fdvd"}$.
+
+## Puntos 3 y 4: Conteo de Frecuencias y Romper César
+
+### Convenciones
+
+* Un `Mensaje` $m$ es una secuencia de caracteres $c_1, c_2, \dots, c_n$.
+* La función `esMinuscula(c)` devuelve verdadero si el carácter $c$ pertenece al alfabeto $A = \{a, b, \dots, z\}$.
+* La función $\text{frec}(c, m)$ representa la cantidad de veces que el carácter $c$ aparece en el mensaje $m$.
+
+### Especificación del Punto 3 (`frecuencias`)
+
+La función que se debe calcular es $F: \text{Mensaje} \to \text{Frecuencias}$, donde $\text{Frecuencias}$ es una lista ordenada de pares $(c, n)$ tal que:
+1. $c \in A$ (solo se consideran letras minúsculas).
+2. $n = \text{frec}(c, m) > 0$ (solo se incluyen letras que aparecen al menos una vez).
+3. La lista está ordenada bajo la relación $\succ$ (Va antes que), donde $(c_1, n_1) \succ (c_2, n_2)$ si $n_1 > n_2$, o si $n_1 = n_2 \land c_1 < c_2$ (orden alfabético).
+
+### Lema 1: Invariante del conteo iterativo
+
+La función `frecuencias` delega el cálculo a una función auxiliar `aux(cola, acc)`. Formalizamos el proceso:
+
+* Un estado es $s = (L, A)$, donde $L$ es la lista de caracteres restantes y $A$ es el mapa de frecuencias acumulado.
+* El estado inicial es $s_0 = (m\text{.toList}, \emptyset)$.
+* El estado es final cuando $L = \text{Nil}$. La respuesta es $A$.
+* La invariante de ciclo establece que la frecuencia acumulada en $A$ sumada a las frecuencias de los caracteres en $L$ es igual a la frecuencia total en el mensaje original $m$:
+
+$$\text{Inv}(L, A) \equiv \forall c \in A, \quad A(c) + \text{frec}(c, L) = \text{frec}(c, m)$$
+
+*Demostración.*
+
+**1. Caso inicial:** En $s_0 = (m\text{.toList}, \emptyset)$, el mapa $A$ está vacío ($A(c) = 0$). Como $L = m$, se cumple que $0 + \text{frec}(c, m) = \text{frec}(c, m)$. Por lo tanto, $\text{Inv}(s_0)$ es verdadera.
+**2. Paso inductivo:** Sea un estado intermedio $s_i = (x \cdot L', A)$ que cumple $\text{Inv}(s_i)$.
+* Si $esMinuscula(x)$ es falso: el nuevo estado es $(L', A)$. Como $x \notin A$, $\text{frec}(c, L') = \text{frec}(c, x \cdot L')$ para todo $c \in A$, conservando la igualdad.
+* Si $esMinuscula(x)$ es verdadero: el nuevo estado es $(L', A')$, donde $A' = A + (x \to A(x) + 1)$. Para la letra $x$, la lista pierde una aparición ($\text{frec}(x, L') = \text{frec}(x, x \cdot L') - 1$), pero el mapa suma 1 ($A'(x) = A(x) + 1$). La suma se mantiene constante. Para cualquier otra letra $c \neq x$, los valores no varían.
+  Por lo tanto, $\text{Inv}(\text{transformar}(s_i))$ se cumple.
+**3. Estado final:** En $s_f = (\text{Nil}, A)$, como la lista está vacía, $\text{frec}(c, \text{Nil}) = 0$. La invariante se reduce a:
+
+$$A(c) + 0 = \text{frec}(c, m) \implies A(c) = \text{frec}(c, m)$$
+
+El mapa final contiene las frecuencias exactas de cada letra en $m$.
+
+**4. Terminación:** En cada iteración, la longitud de la lista $L$ se reduce exactamente en un elemento mediante $L\text{.tail}$. Al ser una lista finita, el algoritmo alcanza $L = \text{Nil}$ en $\vert{}m\vert{}$ pasos. $\blacksquare$
+
+### Especificación del Punto 4 (`desplazamientoProbable` y `romperCesar`)
+
+La función $desplazamientoProbable: \text{Mensaje} \to \mathbb{Z}$ estima la clave de cifrado $k$ asumiendo que la letra más frecuente en el texto en claro original fue la letra $\texttt{'e'}$ ($pos(\texttt{'e'}) = 4$).
+
+Formalmente:
+```math
+desplazamientoProbable(m) =
+\begin{cases}
+0 & \text{si } frecuencias(m) = \text{Nil} \\
+(pos(c_{max}) - pos(\texttt{'e'}) + 26) \bmod 26 & \text{si } frecuencias(m) \neq \text{Nil}
+\end{cases}

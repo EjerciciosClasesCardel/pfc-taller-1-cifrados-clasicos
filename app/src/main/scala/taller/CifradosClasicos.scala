@@ -77,7 +77,30 @@ class CifradosClasicos {
    * Cuenta las letras minúsculas del mensaje, de mayor a menor frecuencia y,
    * en empate, en orden alfabético. El recorrido es recursivo de cola.
    */
-  def frecuencias(m: Mensaje): Frecuencias = ???
+  def frecuencias(m: Mensaje): Frecuencias = {
+  @tailrec
+    def aux(cola: List[Char], acc: Map[Char, Int]): Map[Char, Int] = {
+      if (cola.isEmpty) acc
+      else {
+        val c = cola.head
+        if (esMinuscula(c)) {
+          val actualC = acc.getOrElse(c, 0)
+          aux(cola.tail, acc + (c -> (actualC + 1)))
+        }
+        else {
+          aux(cola.tail, acc)
+        }
+      }
+    }
+
+    val conteo = aux(m.toList, Map.empty)
+
+    conteo.toList.sortWith {
+      case ((c1, n1), (c2, n2)) =>
+        if (n1 != n2) n1 > n2
+        else c1 < c2
+    }
+  }
 
   // Punto 4 -------------------------------------------------------------------
 
@@ -85,9 +108,19 @@ class CifradosClasicos {
    * Supone que la letra más frecuente del mensaje cifrado es la 'e' del
    * original y devuelve la distancia entre las dos. Sin letras, cero.
    */
-  def desplazamientoProbable(m: Mensaje): Int = ???
+  def desplazamientoProbable(m: Mensaje): Int = {
+    val frecs = frecuencias(m)
+    if (frecs.isEmpty) 0
+    else {
+      val masRepetida = frecs.head._1
+      (masRepetida - 'e' + letras) % letras
+    }
+  }
 
-  def romperCesar(m: Mensaje): Mensaje = ???
+  def romperCesar(m: Mensaje): Mensaje = {
+    val k = desplazamientoProbable(m)
+    cesarCola(m, -k)
+  }
 
   // Punto 5 -------------------------------------------------------------------
 

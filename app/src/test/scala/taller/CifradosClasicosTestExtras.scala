@@ -4,7 +4,7 @@ import  org.scalatest.funsuite.AnyFunSuite
 import  org.junit.runner.RunWith
 import  org.scalatestplus.junit.JUnitRunner
 
-// Casos de Pruebas para el punto 1 y 2, espero que cumpla con lo exigido
+// Casos de Pruebas para el punto 1 y 2
 
 @RunWith(classOf[JUnitRunner])
 class CifradosClasicosTestExtras extends  AnyFunSuite {
@@ -90,4 +90,106 @@ class CifradosClasicosTestExtras extends  AnyFunSuite {
   }
 
   // Punto 3: Frecuencias ---------------------
+
+  test("frecuencias: mensaje con multiples empates y frecuencias variadas") {
+    // Valida conteo complejo y orden de empates: 'a' y 'l' empatan con 4; 'd', 'i', 'u', 'v' empatan con 1
+    assert(frecuencias("cali valle del cauca") == List(('a', 4), ('l', 4), ('c', 3), ('e', 2), ('d', 1), ('i', 1), ('u', 1), ('v', 1)))
+  }
+
+  test("frecuencias: solo Mayúsculas, número y símbolos devuelve lista vacía") {
+    // Ningún carácter cumple esMinuscula
+    assert(frecuencias("CALI 2026 #$%&/!") == List())
+  }
+
+  test("frecuencias: triple empate con frecuencias mayores a 1") {
+    // Comprueba que entre 'x', 'y' y 'z' con 3 repeticiones se respete el orden alfabético
+    assert(frecuencias("zzzyyyxxx") == List(('x', 3), ('y', 3), ('z', 3)))
+  }
+
+  test("frecuencias: Ignora caracteres fuera del alfabeto inglés (tildes y eñe)") {
+    // 'ñ' y 'ó' se ignoran; solo deben contabilizarse 'a', 'c', 'n', 'o'
+    val res = frecuencias("año cañón")
+    assert(res == List(('a', 2), ('c', 1), ('n', 1), ('o', 1)))
+  }
+
+  test("frecuencias: distribución en escalera de frecuencias") {
+    // 4 'd', 2 'b', 2 'c' y 1 'a'. Ante empate entre 'b' y 'c', 'b' continua a 'c'
+    assert(frecuencias("ddddccbba") == List(('d', 4), ('b', 2), ('c', 2), ('a', 1)))
+  }
+
+  test("frecuencias: caracteres válidos separados por espacios y números") {
+    // Verifica que los caracteres intermedios no afecten el flujo de la recursión
+    val res = frecuencias("m 1 u 2 n 3 d 4 o")
+    assert(res == List(('d', 1), ('m', 1), ('n', 1), ('o', 1), ('u', 1)))
+  }
+
+  test("frecuencias: alfabeto completo en orden inverso") {
+    // Las 26 letras aparecen una vez; el resultado debe ser el abecedario ordenado de 'a' a 'z'
+    val alfabetoAlreves = "zyxwvutsrqponmlkjihgfedcba"
+    val esperado = ('a' to 'z').map(c => (c, 1)).toList
+    assert(frecuencias(alfabetoAlreves) == esperado)
+  }
+
+  test("frecuencias: prueba de esfuerzo para verificar recursión de cola en memoria") {
+    // 100.000 caracteres: si no fuera recursiva de cola, causaría StackOverflowError
+    val textoLargo = ("a" * 50000) + ("z" * 50000)
+    assert(frecuencias(textoLargo) == List(('a', 50000), ('z', 50000)))
+  }
+
+  // Punto 4: Desplazamiento Probable y Romper Cesar ---------------------
+
+  test("desplazamientoProbable: texto donde la 'e' predomina devuelve desplazamiento 0") {
+    val m = "este es el mejor ejemplo en espanol de un texto con muchas letras e"
+    assert(desplazamientoProbable(m) == 0)
+    assert(romperCesar(m) == m)
+  }
+
+  test("romperCesar: descifra correctamente con rotación estándar positiva (k = 4)") {
+    val original = "este mensaje tiene que ser descifrado correctamente"
+    val cifrado = cesarCola(original, 4)
+    assert(desplazamientoProbable(cifrado) == 4)
+    assert(romperCesar(cifrado) == original)
+  }
+
+  test("romperCesar: descifra con rotación que envuelve el abecedario (k = 25)") {
+    // Desplazamiento 25 equivale a -1; 'e' se convierte en 'd'
+    val original = "el elemento verde emerge entre el cesped"
+    val cifrado = cesarCola(original, 25)
+    assert(desplazamientoProbable(cifrado) == 25)
+    assert(romperCesar(cifrado) == original)
+  }
+
+  test("romperCesar: descifra correctamente un mensaje cifrado con ROT13 (k = 13)") {
+    val original = "este es un mensaje secreto en la noche estrellada"
+    val cifrado = cesarCola(original, 13)
+    assert(desplazamientoProbable(cifrado) == 13)
+    assert(romperCesar(cifrado) == original)
+  }
+
+  test("desplazamientoProbable y romperCesar: texto sin letras minúsculas") {
+    // Al no haber letras, el desplazamiento estimado debe ser 0 y la cadena no muta
+    val m = "12345 !@#$ %^&*"
+    assert(desplazamientoProbable(m) == 0)
+    assert(romperCesar(m) == m)
+  }
+
+  test("desplazamientoProbable: empate múltiple sin la letra 'e'") {
+    // 'b', 'c', 'd' aparecen 3 veces. Gana 'b'. Distancia modular de 'e' a 'b' es 23
+    assert(desplazamientoProbable("bbbcccddd") == 23)
+  }
+
+  test("romperCesar: demuestra el fallo del método cuando la 'e' no es la más frecuente") {
+    // En 'un perro', la 'r' es la más frecuente (2 veces). El algoritmo asume erróneamente que 'r' es 'e'
+    val original = "un perro"
+    val cifrado = cesarCola(original, 5)
+    assert(romperCesar(cifrado) != original)
+  }
+
+  test("romperCesar: conserva signos, espacios y mayúsculas al descifrar") {
+    val original = "El secreto es excelente: tres niveles (1, 2 y 3)!"
+    val cifrado = cesarCola(original, 8)
+    assert(desplazamientoProbable(cifrado) == 8)
+    assert(romperCesar(cifrado) == original)
+  }
 }
+

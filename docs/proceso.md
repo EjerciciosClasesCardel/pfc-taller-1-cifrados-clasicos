@@ -170,3 +170,106 @@ sale directamente del caso base.
 
 Esta diferencia es la que comprueba el test `"cesarCola: aguanta un mensaje
 largo sin desbordar la pila"`, con un mensaje de 200 000 letras.
+
+
+## Punto 3: `frecuencias` (recursión de cola)
+
+La función `frecuencias` utiliza la función auxiliar `aux` anotada con `@tailrec`. Esto permite recorrer el mensaje de forma iterativa y mantener un espacio de pila constante.
+
+* **Caso base:** si la lista de caracteres (`cola`) está vacía, devuelve el mapa acumulador `acc`.
+* **Caso recursivo:** evalúa el primer carácter. Si es una letra minúscula, incrementa su conteo en el mapa `acc` y hace el llamado recursivo con el resto de la lista. Si no es una letra minúscula, hace el llamado recursivo dejando el mapa `acc` intacto.
+
+### Ejecución de `aux` para el mensaje `"casa"`
+
+La función convierte el mensaje en una lista de caracteres y la recorre con un mapa vacío como acumulador inicial.
+
+| Paso | Llamada | `cola` | `acc` | Qué hace | Pila |
+|:----:|---------|:------:|:-----:|----------|------|
+| 1 | `aux(['c','a','s','a'], {})` | `['c','a','s','a']` | `{}` | cuenta `c` y actualiza `acc` | 1 capa |
+| 2 | `aux(['a','s','a'], {'c':1})` | `['a','s','a']` | `{'c':1}` | cuenta `a` y actualiza `acc` | 1 capa |
+| 3 | `aux(['s','a'], {'c':1, 'a':1})` | `['s','a']` | `{'c':1, 'a':1}` | cuenta `s` y actualiza `acc` | 1 capa |
+| 4 | `aux(['a'], {'c':1, 'a':1, 's':1})` | `['a']` | `{'c':1, 'a':1, 's':1}` | cuenta la segunda `a` | 1 capa |
+| 5 | `aux([], {'c':1, 'a':2, 's':1})` | vacío | `{'c':1, 'a':2, 's':1}` | caso base: devuelve `acc` | 1 capa |
+
+### Diagrama de llamados de pila con recursión de cola
+
+```mermaid
+sequenceDiagram
+    participant Main as aux(casa, vacio)
+    participant L1 as aux(asa, c:1)
+    participant L2 as aux(sa, c:1, a:1)
+    participant L3 as aux(a, c:1, a:1, s:1)
+    participant L4 as aux(vacio, c:1, a:2, s:1)
+
+    Main->>L1: tail call, acc = c:1
+    L1->>L2: tail call, acc = c:1, a:1
+    L2->>L3: tail call, acc = c:1, a:1, s:1
+    L3->>L4: tail call, acc = c:1, a:2, s:1
+    L4-->>Main: devuelve Map(c -> 1, a -> 2, s -> 1)
+```
+
+Al finalizar la recolección de los datos, el resultado se convierte a una lista y se ordena. El criterio de ordenamiento prioriza las frecuencias mayores (`n1 > n2`). En caso de empate, resuelve por orden alfabético (`c1 < c2`).
+
+## Punto 4: `desplazamientoProbable` y `romperCesar`
+
+Estas funciones permiten descifrar un texto sin conocer su clave original mediante el análisis de la frecuencia de las letras.
+
+### `desplazamientoProbable`
+
+La función obtiene la lista ordenada de frecuencias del mensaje cifrado. Asume que la letra más frecuente del texto cifrado corresponde a la letra 'e' del texto original.
+
+Si $p_{\text{max}}$ es la posición de la letra más frecuente en el alfabeto y $p_e$ es la posición de la 'e' (4), la distancia (o desplazamiento $k$) se calcula con la siguiente ecuación:
+
+```math
+k = (p_{\text{max}} - p_e + 26) \bmod 26
+```
+
+El factor `+ 26` garantiza que el valor antes del módulo sea positivo. Esto evita resultados negativos en el cálculo de la distancia.
+
+### `romperCesar`
+
+Una vez obtenido el desplazamiento probable $k$, la función `romperCesar` llama a `cesarCola(m, -k)` para revertir el cifrado y recuperar el mensaje original.
+
+### Ejecución de `romperCesar("hvwh")`
+
+Para comprobar el comportamiento, utilizamos el mensaje `"este"`, cifrado con $k = 3$, lo que genera el texto `"hvwh"`.
+
+1. `desplazamientoProbable("hvwh")` llama a `frecuencias("hvwh")`.
+2. `frecuencias` devuelve la letra más repetida: `h` (posición 7).
+3. Se calcula la distancia $k$ entre `h` y la letra `e` (posición 4):
+   ```math
+   k = (7 - 4 + 26) \bmod 26 = 29 \bmod 26 = 3
+   ```
+4. `romperCesar` llama a `cesarCola("hvwh", -3)`.
+5. El desplazamiento de `-3` revierte las letras a su estado original (`h` vuelve a `e`, `v` vuelve a `s`, `w` vuelve a `t`), devolviendo `"este"`.
+
+### Flujo de ejecución de `romperCesar("hvwh")`
+
+Aunque el punto 4 no utiliza recursión propia, coordina el llamado de varias funciones. Aquí detallamos cómo se transforma la información paso a paso al intentar descifrar la palabra `"hvwh"`.
+
+| Paso | Función actual | Llamada interna | Resultado parcial | Acción |
+|:----:|----------------|-----------------|-------------------|--------|
+| 1 | `romperCesar` | `desplazamientoProbable("hvwh")` | Pendiente | Inicia el proceso de cálculo de clave. |
+| 2 | `desplazamientoProbable` | `frecuencias("hvwh")` | Pendiente | Solicita el conteo de letras. |
+| 3 | `frecuencias` | `aux(['h','v','w','h'], {})` | `List(('h',2), ('v',1), ('w',1))` | Devuelve la lista ordenada por repetición. |
+| 4 | `desplazamientoProbable` | Ninguna | `k = 3` | Extrae la 'h', calcula la distancia con la 'e' y devuelve 3. |
+| 5 | `romperCesar` | `cesarCola("hvwh", -3)` | Pendiente | Llama a la función de descifrado con la clave invertida. |
+| 6 | `cesarCola` | `desplazar` (interna) | `"este"` | Descifra el mensaje y lo devuelve a `romperCesar`. |
+
+### Diagrama de secuencia de llamados
+
+Este diagrama ilustra cómo `romperCesar` delega las tareas a las demás funciones sin generar recursión propia, manteniendo un flujo de ejecución secuencial.
+
+```mermaid
+sequenceDiagram
+    participant RC as romperCesar(hvwh)
+    participant DP as desplazamientoProbable(hvwh)
+    participant F as frecuencias(hvwh)
+    participant CC as cesarCola(hvwh, -3)
+
+    RC->>DP: solicita k probable
+    DP->>F: frecuencias(hvwh)
+    F-->>DP: devuelve List((h,2), (v,1), (w,1))
+    DP-->>RC: calcula y devuelve k = 3
+    RC->>CC: llama con k invertido (-3)
+    CC-->>RC: devuelve "este"
