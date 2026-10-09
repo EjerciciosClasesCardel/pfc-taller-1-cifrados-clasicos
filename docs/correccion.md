@@ -501,3 +501,235 @@ Solo falta ver que ese orden es el que pide el enunciado. Como $\text{vaAntes}$ 
 ```
 
 para todo mensaje $m$, incluyendo los casos extremos: si $m$ es vacío o no tiene letras, $\text{contar}$ devuelve $\text{Nil}$, `ordenar` devuelve $\text{Nil}$ y $\text{Frec}(m)$ también es la lista vacía.
+
+
+# Punto 4: Informe de corrección de romperCesar
+
+Fundamentos de Programación Funcional y Concurrente.
+
+## 1. Descripción del problema
+
+La función `romperCesar` descifra un mensaje que fue cifrado con el cifrado
+César, es decir, un mensaje en el que cada letra fue desplazada $d$ posiciones
+en el alfabeto. Como no se conoce $d$, se usa la siguiente heurística: en
+español la letra más frecuente suele ser la "e". Entonces se busca la letra
+que más aparece en el mensaje cifrado y se asume que corresponde a una "e"
+desplazada. A partir de ahí se calcula el desplazamiento y se aplica su
+inverso para recuperar el mensaje original.
+
+El programa está compuesto por tres funciones:
+
+```scala
+def desplazamientoProbable(m: Mensaje): Int = {
+  def cuentaLetra(c: Char): Int = {
+    @tailrec
+    def cuenta(i: Int, acc: Int): Int =
+      if (i >= m.length) acc
+      else if (m(i) == c) cuenta(i + 1, acc + 1)
+      else cuenta(i + 1, acc)
+
+    cuenta(0, 0)
+  }
+
+  @tailrec
+  def buscar(k: Int, kMejor: Int, cantMejor: Int): Int =
+    if (k > 25) {
+      if (cantMejor == 0) 0
+      else (kMejor - 4 + 26) % 26
+    }
+    else {
+      val n = cuentaLetra(('a' + k).toChar)
+      if (n > cantMejor) buscar(k + 1, k, n)
+      else buscar(k + 1, kMejor, cantMejor)
+    }
+
+  buscar(0, 0, 0)
+}
+
+def romperCesar(m: Mensaje): Mensaje =
+  cesar(m, (26 - desplazamientoProbable(m)) % 26)
+```
+
+## 2. Especificación
+
+Sea $m$ un mensaje. Se define:
+
+- $\text{cant}(c, m)$ como la cantidad de veces que aparece el caracter $c$ en $m$.
+- $M = \max\{\text{cant}(\text{'a'}+j, m) \mid 0 \leq j \leq 25\}$ como la mayor
+  frecuencia entre las letras del alfabeto.
+- $k^{*} = \min\{j \mid 0 \leq j \leq 25 \land \text{cant}(\text{'a'}+j, m) = M\}$
+  como la primera letra que alcanza esa frecuencia máxima.
+
+Entonces $f : \text{Mensaje} \to \mathbb{N}$, la función que calcula el
+desplazamiento probable, se define como:
+
+```math
+f(m) = \begin{cases} 0 & \text{si } M = 0 \\ (k^{*} - 4 + 26) \bmod 26 & \text{si } M > 0 \end{cases}
+```
+
+Aquí el 4 es la posición de la "e" en el alfabeto (a = 0, b = 1, c = 2, d = 3,
+e = 4). Restarlo indica cuántas posiciones se movió la "e" hasta llegar a la
+letra más frecuente. Se suma 26 y se toma módulo 26 para que el resultado
+nunca sea negativo.
+
+Se debe argumentar que:
+
+```math
+\forall m \in \text{Mensaje} : P_f(m) == f(m)
+```
+
+donde $P_f$ es `desplazamientoProbable`. Como `desplazamientoProbable` usa dos
+funciones auxiliares iterativas, `cuenta` y `buscar`, se argumenta primero la
+corrección de cada una con el método del invariante.
+
+## 3. Corrección de `cuenta` (dentro de `cuentaLetra`)
+
+Esta función cuenta cuántas veces aparece el caracter $c$ en el mensaje $m$.
+Es un programa iterativo (recursión de cola) que implementa el siguiente
+proceso:
+
+- Un estado $s = (i, acc)$, donde $i$ es la posición que se va a revisar y
+  $acc$ es el conteo acumulado.
+- El estado inicial es $s_0 = (0, 0)$.
+- $(i, acc)$ es final si $i \geq m.\text{length}$.
+- La invariante de ciclo es:
+
+```math
+\text{Inv}(i, acc) \equiv 0 \leq i \leq m.\text{length} \land acc = \#\{j \mid 0 \leq j < i \land m(j) = c\}
+```
+
+Es decir, $acc$ es la cantidad de veces que aparece $c$ en las primeras $i$
+posiciones de $m$.
+- $\text{transformar}((i, acc)) = (i+1, acc')$, donde $acc' = acc + 1$ si
+  $m(i) = c$, y $acc' = acc$ si no.
+
+Ahora, demostramos los puntos:
+
+**1.** $\text{Inv}(s_0)$: el estado inicial cumple la condición invariante.
+
+```math
+s_0 = (0, 0) \implies 0 \leq 0 \leq m.\text{length} \land 0 = \#\{j \mid 0 \leq j < 0 \land m(j) = c\} = \#\emptyset
+```
+
+**2.** $(s_i \neq s_f \land \text{Inv}(s_i)) \rightarrow \text{Inv}(\text{transformar}(s_i))$
+
+Sea $(i, acc)$ un estado no final que cumple la invariante, es decir,
+$i < m.\text{length}$. Entonces $i + 1 \leq m.\text{length}$. Al pasar de $i$ a
+$i + 1$ se incorpora la posición $i$ al conteo:
+
+- Si $m(i) = c$, el conteo de las primeras $i+1$ posiciones es $acc + 1$, y el
+  programa suma 1.
+- Si $m(i) \neq c$, el conteo de las primeras $i+1$ posiciones sigue siendo
+  $acc$, y el programa no suma.
+
+En ambos casos $acc'$ es el conteo de las primeras $i + 1$ posiciones, así que
+se mantiene la invariante.
+
+**3.** $\text{Inv}(s_f) \rightarrow \text{respuesta}(s_f) == f(a)$
+
+```math
+(i \geq m.\text{length}) \land (i \leq m.\text{length}) \rightarrow i = m.\text{length} \rightarrow acc = \#\{j \mid 0 \leq j < m.\text{length} \land m(j) = c\} = \text{cant}(c, m)
+```
+
+**4.** En cada paso, la componente $i$ del estado incrementa en 1, acercándose
+a $m.\text{length}$. Después de $m.\text{length}$ iteraciones se alcanza el
+estado final.
+
+Esto implica que `cuentaLetra(c)` $== \text{cuenta}(0, 0) == \text{cant}(c, m)$.
+
+## 4. Corrección de `buscar`
+
+Esta función recorre las 26 letras del alfabeto y se queda con la primera que
+tiene mayor frecuencia en $m$. Implementa el siguiente proceso iterativo:
+
+- Un estado $s = (k, kMejor, cantMejor)$, donde $k$ es la letra que se va a
+  revisar, $kMejor$ es la mejor letra encontrada hasta el momento y
+  $cantMejor$ es su cantidad de apariciones.
+- El estado inicial es $s_0 = (0, 0, 0)$.
+- $(k, kMejor, cantMejor)$ es final si $k > 25$, o lo que es lo mismo, si
+  $k = 26$.
+- Sea $M_k = \max(\{0\} \cup \{\text{cant}(\text{'a'}+j, m) \mid 0 \leq j < k\})$.
+  La invariante de ciclo es:
+
+```math
+\text{Inv}(k, kMejor, cantMejor) \equiv 0 \leq k \leq 26 \land cantMejor = M_k \land kMejor = \begin{cases} 0 & \text{si } M_k = 0 \\ \min\{j < k \mid \text{cant}(\text{'a'}+j, m) = M_k\} & \text{si } M_k > 0 \end{cases}
+```
+
+- $\text{transformar}((k, kMejor, cantMejor)) = (k+1, k, n)$ si
+  $n > cantMejor$, y $(k+1, kMejor, cantMejor)$ si no, donde
+  $n = \text{cuentaLetra}(\text{'a'}+k) = \text{cant}(\text{'a'}+k, m)$
+  (por lo demostrado en la sección 3).
+
+Ahora, demostramos los puntos:
+
+**1.** $\text{Inv}(s_0)$: el estado inicial cumple la condición invariante.
+
+```math
+s_0 = (0, 0, 0) \implies 0 \leq 0 \leq 26 \land cantMejor = 0 = M_0 \land kMejor = 0
+```
+
+Con $k = 0$ no se ha revisado ninguna letra, así que el máximo es 0.
+
+**2.** $(s_i \neq s_f \land \text{Inv}(s_i)) \rightarrow \text{Inv}(\text{transformar}(s_i))$
+
+Sea $(k, kMejor, cantMejor)$ un estado con $k \leq 25$ que cumple la
+invariante. Entonces $k + 1 \leq 26$ y $M_{k+1} = \max(M_k, n)$. Hay dos casos:
+
+- Si $n > cantMejor = M_k$: el nuevo máximo es $M_{k+1} = n$ y $n \geq 1$. Como
+  todas las letras anteriores tienen frecuencia a lo sumo $M_k < n$, la letra
+  $k$ es la primera que alcanza $n$. El nuevo estado es $(k+1, k, n)$, que
+  cumple la invariante.
+- Si $n \leq cantMejor = M_k$: el máximo no cambia, $M_{k+1} = M_k$. Si
+  $M_k > 0$, la primera letra que alcanza el máximo sigue siendo $kMejor$,
+  incluso en caso de empate ($n = M_k$), porque la comparación es
+  estrictamente mayor. Si $M_k = 0$, entonces $n = 0$ y $kMejor = 0$ sigue
+  siendo válido. El nuevo estado $(k+1, kMejor, cantMejor)$ cumple la
+  invariante.
+
+**3.** $\text{Inv}(s_f) \rightarrow \text{respuesta}(s_f) == f(a)$
+
+En el estado final $k = 26$, por lo que $cantMejor = M_{26} = M$ y
+$kMejor = k^{*}$ si $M > 0$ (o $kMejor = 0$ si $M = 0$). Entonces:
+
+```math
+\text{respuesta}(s_f) = \begin{cases} 0 & \text{si } cantMejor = 0 \\ (kMejor - 4 + 26) \bmod 26 & \text{si } cantMejor > 0 \end{cases} = \begin{cases} 0 & \text{si } M = 0 \\ (k^{*} - 4 + 26) \bmod 26 & \text{si } M > 0 \end{cases} = f(m)
+```
+
+**4.** En cada paso, la componente $k$ del estado incrementa en 1, acercándose
+a 26. Después de 26 iteraciones se alcanza el estado final.
+
+Esto implica que `buscar(0, 0, 0)` $== f(m)$.
+
+## 4. Corrección de `desplazamientoProbable` y `romperCesar`
+
+Como `desplazamientoProbable(m)` solo evalúa `buscar(0, 0, 0)`, por la sección
+4 se tiene:
+
+```math
+P_f(m) == \text{buscar}(0, 0, 0) == f(m)
+```
+
+Ahora argumentamos que `romperCesar` recupera el mensaje original bajo el
+supuesto de la heurística. Sea $o$ el mensaje original, cuya letra más
+frecuente es la "e" (posición 4), y sea $m = \text{cesar}(o, d_0)$ el mensaje
+cifrado con desplazamiento $d_0$. Cada letra se movió $d_0$ posiciones, así
+que la letra más frecuente de $m$ es la que está en la posición
+$(4 + d_0) \bmod 26$, es decir, $k^{*} = (4 + d_0) \bmod 26$.
+Entonces:
+
+```math
+f(m) = (k^{*} - 4 + 26) \bmod 26 = d_0
+```
+
+Finalmente, `romperCesar(m)` aplica $\text{cesar}(m, (26 - d_0) \bmod 26)$,
+que es el desplazamiento inverso, y por lo tanto devuelve el mensaje $o$.
+
+Concluimos que:
+
+```math
+\forall m \in \text{Mensaje} : P_f(m) == f(m)
+```
+
+y que `romperCesar(m)` recupera el mensaje original siempre que la letra más
+frecuente del mensaje original sea la "e" (y que en caso de empate entre
+letras, la "e" desplazada sea la primera de ellas).
